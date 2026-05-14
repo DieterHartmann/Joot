@@ -15,7 +15,10 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/packages/db/node_modules ./packages/db/node_modules
 COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
 COPY . .
-RUN pnpm --filter @joot/db generate
+RUN pnpm --filter @joot/db generate && \
+    echo "=== PRISMA GENERATE WROTE TO ===" && \
+    find /app -name "default.js" -path "*/.prisma/*" -size +10k 2>/dev/null && \
+    echo "=== END ==="
 RUN pnpm --filter @joot/db build
 RUN pnpm --filter @joot/api build
 # pnpm deploy downloads fresh packages into /deploy, including a fresh @prisma/client
