@@ -1,0 +1,8 @@
+node_modules
+**/node_modules
+**/.prisma
+**/dist
+.env
+.git
+.gitignore
+*.md
