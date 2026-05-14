@@ -64,6 +64,28 @@ services:
       - api
       - web
 
+  # One-shot migration runner — not started by default.
+  # Usage: docker compose --profile tools run --rm migrate
+  migrate:
+    image: node:22-alpine
+    working_dir: /app
+    entrypoint: >
+      sh -c "npm install -g prisma@6 --quiet &&
+             prisma migrate dev --schema=/app/prisma/schema.prisma --name $$MIGRATION_NAME"
+    environment:
+      # Uses internal Docker network — postgres resolves to the postgres container
+      DATABASE_URL: postgresql://joot:${POSTGRES_PASSWORD}@postgres:5432/joot
+      MIGRATION_NAME: ${MIGRATION_NAME:-init}
+    volumes:
+      # Mount the prisma directory so generated migration files land on the host
+      - ./packages/db/prisma:/app/prisma
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    profiles:
+      - tools
+
 volumes:
   postgres_data:
   redis_data:
