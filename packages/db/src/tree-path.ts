@@ -11,10 +11,11 @@ async function buildPath(
   let currentId: string | null = deptId
 
   while (currentId !== null) {
-    const dept = await client.department.findUniqueOrThrow({
-      where: { id: currentId },
-      select: { id: true, name: true, parentDepartmentId: true },
-    })
+    const dept: { id: string; name: string; parentDepartmentId: string | null } =
+      await client.department.findUniqueOrThrow({
+        where: { id: currentId },
+        select: { id: true, name: true, parentDepartmentId: true },
+      })
     segments.unshift({ id: dept.id, name: dept.name })
     currentId = dept.parentDepartmentId
   }

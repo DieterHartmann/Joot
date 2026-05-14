@@ -43,10 +43,11 @@ export async function resolveApexApprover(
   let currentId: string | null = departmentId
 
   while (currentId !== null) {
-    const dept = await client.department.findUniqueOrThrow({
-      where:  { id: currentId },
-      select: { apexApproverId: true, parentDepartmentId: true },
-    })
+    const dept: { apexApproverId: string | null; parentDepartmentId: string | null } =
+      await client.department.findUniqueOrThrow({
+        where:  { id: currentId },
+        select: { apexApproverId: true, parentDepartmentId: true },
+      })
 
     if (dept.apexApproverId !== null) {
       return resolveDeputy(client, dept.apexApproverId)
