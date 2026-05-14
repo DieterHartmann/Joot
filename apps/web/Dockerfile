@@ -3,10 +3,10 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 
 FROM base AS deps
 WORKDIR /app
-COPY package.json pnpm-workspace.yaml ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
 COPY packages/types/package.json ./packages/types/
 COPY apps/web/package.json ./apps/web/
-RUN pnpm install --no-frozen-lockfile
+RUN pnpm install
 
 FROM base AS build
 WORKDIR /app
