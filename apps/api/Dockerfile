@@ -24,7 +24,7 @@ RUN pnpm --filter @joot/api build
 # path — no manual path-finding needed. Uses the build-stage prisma binary.
 RUN pnpm --filter @joot/api deploy --prod /deploy && \
     cd /deploy && \
-    /app/node_modules/.bin/prisma generate --schema /app/packages/db/prisma/schema.prisma
+    /app/packages/db/node_modules/.bin/prisma generate --schema /app/packages/db/prisma/schema.prisma
 
 FROM node:22-alpine AS runner
 WORKDIR /app
