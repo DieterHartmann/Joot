@@ -1,5 +1,5 @@
 FROM node:22-alpine AS base
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm install -g pnpm@9
 
 FROM base AS deps
 WORKDIR /app
@@ -20,7 +20,6 @@ RUN pnpm --filter @joot/api build
 
 FROM node:22-alpine AS runner
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY --from=build /app/apps/api/dist ./dist
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/packages ./packages

@@ -1,5 +1,5 @@
 FROM node:22-alpine AS base
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm install -g pnpm@9
 
 FROM base AS deps
 WORKDIR /app
@@ -17,6 +17,5 @@ RUN pnpm --filter @joot/web build
 
 FROM nginx:alpine AS runner
 COPY --from=build /app/apps/web/dist /usr/share/nginx/html
-# SPA fallback: all routes serve index.html
 COPY apps/web/nginx-spa.conf /etc/nginx/conf.d/default.conf
 EXPOSE 3000
