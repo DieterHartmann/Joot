@@ -7,7 +7,7 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
 COPY packages/db/package.json ./packages/db/
 COPY packages/types/package.json ./packages/types/
 COPY apps/api/package.json ./apps/api/
-RUN pnpm install
+RUN pnpm install --ignore-scripts
 
 FROM base AS build
 WORKDIR /app

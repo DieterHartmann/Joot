@@ -6,7 +6,7 @@ WORKDIR /app
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
 COPY packages/types/package.json ./packages/types/
 COPY apps/web/package.json ./apps/web/
-RUN pnpm install
+RUN pnpm install --ignore-scripts
 
 FROM base AS build
 WORKDIR /app
