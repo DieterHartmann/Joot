@@ -16,8 +16,8 @@ COPY --from=deps /app/packages/db/node_modules ./packages/db/node_modules
 COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
 COPY . .
 RUN pnpm --filter @joot/db generate && \
-    echo "=== PRISMA GENERATE WROTE TO ===" && \
-    find /app -name "default.js" -path "*/.prisma/*" -size +10k 2>/dev/null && \
+    echo "=== ALL FILES IN .prisma DIRS ===" && \
+    find /app -path "*/.prisma/*" -type f 2>/dev/null | head -60 && \
     echo "=== END ==="
 RUN pnpm --filter @joot/db build
 RUN pnpm --filter @joot/api build
