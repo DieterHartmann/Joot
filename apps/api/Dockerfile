@@ -19,12 +19,15 @@ RUN pnpm --filter @joot/db generate
 RUN pnpm --filter @joot/db build
 RUN pnpm --filter @joot/api build
 # pnpm deploy downloads fresh packages into /deploy, including a fresh @prisma/client
-# stub. Re-running prisma generate from within /deploy lets Prisma find @prisma/client
-# in the deployed node_modules and write the generated client to exactly the right
-# path — no manual path-finding needed. Uses the build-stage prisma binary.
+# stub (no generated client). prisma generate (run earlier) writes its output relative
+# to the schema's package root, which is packages/db — so the generated client lands at
+# /app/packages/db/node_modules/.prisma/client/.
+# Copy that into both the root of /deploy/node_modules and into the @prisma/client
+# directory inside the deploy virtual store, which is where @prisma/client resolves from.
 RUN pnpm --filter @joot/api deploy --prod /deploy && \
-    cd /deploy && \
-    /app/packages/db/node_modules/.bin/prisma generate --schema /app/packages/db/prisma/schema.prisma
+    PRISMA_DEPLOY=$(find /deploy/node_modules/.pnpm -maxdepth 1 -name "@prisma+client*" -type d | head -1) && \
+    cp -r /app/packages/db/node_modules/.prisma /deploy/node_modules/.prisma && \
+    cp -r /app/packages/db/node_modules/.prisma "$PRISMA_DEPLOY/node_modules/.prisma"
 
 FROM node:22-alpine AS runner
 WORKDIR /app
