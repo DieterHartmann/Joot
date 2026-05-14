@@ -9,6 +9,9 @@
     "node": ">=22",
     "pnpm": ">=9"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "prisma", "@prisma/client"]
+  },
   "scripts": {
     "db:generate": "pnpm --filter @joot/db generate",
     "db:migrate": "pnpm --filter @joot/db migrate",
