@@ -1,0 +1,18 @@
+{
+  "name": "joot",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=9"
+  },
+  "scripts": {
+    "db:generate": "pnpm --filter @joot/db generate",
+    "db:migrate": "pnpm --filter @joot/db migrate",
+    "db:studio": "pnpm --filter @joot/db studio",
+    "db:deploy": "pnpm --filter @joot/db deploy"
+  }
+}

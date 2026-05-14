@@ -1,0 +1,317 @@
+// MULTI-TENANCY CAVEAT (SOW Section 11):
+// Prisma multiSchema requires all schema names to be known at compile time.
+// The "subsidiary" schema here is a migration template — it validates the tenant
+// data model. At runtime, each tenant has their own Postgres schema
+// (e.g. subsidiary_acme). Routing is implemented via Prisma $extends with
+// $allOperations wrapping each query in SET LOCAL search_path TO "<schema>",public
+// inside a transaction. Because multiSchema generates schema-qualified SQL
+// ("subsidiary"."user"), this approach requires removing @@schema annotations
+// from tenant models and relying solely on search_path — a known Prisma limitation.
+// If this proves too fragile, fall back to the ?schema= URL-per-client approach
+// with a separate Prisma schema file for tenant tables (no @@schema).
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["public", "subsidiary"]
+}
+
+// ─── Public schema ────────────────────────────────────────────────────────────
+
+enum LeaveYearType {
+  calendar
+  tax
+  anniversary
+
+  @@schema("public")
+}
+
+model HoldingCompany {
+  id           String       @id @default(uuid()) @db.Uuid
+  name         String
+  schemaName   String       @map("schema_name")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  subsidiaries Subsidiary[]
+
+  @@map("holding_company")
+  @@schema("public")
+}
+
+model Subsidiary {
+  id                     String         @id @default(uuid()) @db.Uuid
+  holdingCompanyId       String         @map("holding_company_id") @db.Uuid
+  holdingCompany         HoldingCompany @relation(fields: [holdingCompanyId], references: [id])
+  name                   String
+  pgSchema               String         @map("pg_schema")
+  leaveYearType          LeaveYearType  @map("leave_year_type")
+  leaveYearStart         DateTime?      @map("leave_year_start") @db.Date
+  publicHolidaysExcluded Boolean        @default(true) @map("public_holidays_excluded")
+  timezone               String         @default("Africa/Johannesburg")
+  createdAt              DateTime       @default(now()) @map("created_at")
+
+  @@map("subsidiary")
+  @@schema("public")
+}
+
+// ─── Subsidiary (tenant) schema ───────────────────────────────────────────────
+// "subsidiary" schema here is the migration template. See caveat at top of file.
+// cross-schema FKs (e.g. user.subsidiary_id → public.subsidiary) are not modelled
+// as Prisma relations — they are stored as plain UUID fields and enforced at
+// application level to avoid Prisma cross-schema relation limitations.
+
+enum Role {
+  employee
+  manager
+  hr_director
+  ceo
+  subsidiary_admin
+  holding_admin
+
+  @@schema("subsidiary")
+}
+
+enum LeaveCategory {
+  annual
+  sick
+  parental
+  maternity
+  compassionate
+  family_responsibility
+  custom
+
+  @@schema("subsidiary")
+}
+
+enum RuleType {
+  accrual_rate
+  probation_block
+  max_consecutive_days
+  min_notice_days
+  expiry_warning_days
+  sick_leave_cycle
+  bcea_floor
+
+  @@schema("subsidiary")
+}
+
+enum LeaveRequestStatus {
+  draft
+  pending_line_manager
+  pending_apex
+  approved
+  rejected
+  cancelled
+  recalled
+
+  @@schema("subsidiary")
+}
+
+enum HalfDayPortion {
+  morning
+  afternoon
+
+  @@schema("subsidiary")
+}
+
+enum ApprovalStepStatus {
+  pending
+  approved
+  rejected
+  delegated
+
+  @@schema("subsidiary")
+}
+
+model User {
+  id            String   @id @default(uuid()) @db.Uuid
+  subsidiaryId  String   @map("subsidiary_id") @db.Uuid
+  departmentId  String   @map("department_id") @db.Uuid
+  email         String   @unique
+  fullName      String   @map("full_name")
+  role          Role
+  startDate     DateTime @map("start_date") @db.Date
+  ctc           Decimal  @db.Decimal(15, 2)
+  msEntraLinked Boolean  @default(false) @map("ms_entra_linked")
+  entraObjectId String?  @map("entra_object_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  department Department @relation("UserDepartment", fields: [departmentId], references: [id])
+
+  // Reverse relations for department approver roles
+  defaultApproverFor Department[] @relation("DepartmentDefaultApprover")
+  apexApproverFor    Department[] @relation("DepartmentApexApprover")
+
+  leaveBalances LeaveBalance[]
+  leaveRequests LeaveRequest[]
+  approvalSteps ApprovalStep[]
+
+  // deputy_assignment: user is the person being covered
+  coverageAssignments DeputyAssignment[] @relation("DeputyFor")
+  // deputy_assignment: user is the acting deputy
+  deputyAssignments   DeputyAssignment[] @relation("DeputyIs")
+
+  auditEvents AuditEvent[]
+
+  @@map("user")
+  @@schema("subsidiary")
+}
+
+model Department {
+  id                 String  @id @default(uuid()) @db.Uuid
+  subsidiaryId       String  @map("subsidiary_id") @db.Uuid
+  parentDepartmentId String? @map("parent_department_id") @db.Uuid
+  name               String
+  defaultApproverId  String  @map("default_approver_id") @db.Uuid
+  apexApproverId     String? @map("apex_approver_id") @db.Uuid
+  treeDepth          Int     @default(0) @map("tree_depth")
+  // UUID-based materialised path — stable across renames, e.g. "uuid1.uuid2.uuid3"
+  treePath           String  @map("tree_path")
+  // Human-readable proxy — synced on rename/move, e.g. "North Region.District 3.Store 42"
+  treePathLabel      String  @map("tree_path_label")
+
+  parent   Department?  @relation("DepartmentTree", fields: [parentDepartmentId], references: [id])
+  children Department[] @relation("DepartmentTree")
+
+  defaultApprover User  @relation("DepartmentDefaultApprover", fields: [defaultApproverId], references: [id])
+  apexApprover    User? @relation("DepartmentApexApprover", fields: [apexApproverId], references: [id])
+
+  users User[] @relation("UserDepartment")
+
+  @@map("department")
+  @@schema("subsidiary")
+}
+
+model LeaveType {
+  id                   String        @id @default(uuid()) @db.Uuid
+  subsidiaryId         String        @map("subsidiary_id") @db.Uuid
+  name                 String
+  category             LeaveCategory
+  maxDaysPerYear       Int?          @map("max_days_per_year")
+  allowNegative        Boolean       @default(false) @map("allow_negative")
+  expiryMonths         Int?          @map("expiry_months")
+  requiresDualApproval Boolean       @default(false) @map("requires_dual_approval")
+  bceaProtected        Boolean       @default(false) @map("bcea_protected")
+  active               Boolean       @default(true)
+
+  rules    LeaveRule[]
+  balances LeaveBalance[]
+  requests LeaveRequest[]
+
+  @@map("leave_type")
+  @@schema("subsidiary")
+}
+
+model LeaveRule {
+  id          String    @id @default(uuid()) @db.Uuid
+  leaveTypeId String    @map("leave_type_id") @db.Uuid
+  leaveType   LeaveType @relation(fields: [leaveTypeId], references: [id])
+  ruleType    RuleType  @map("rule_type")
+  parameters  Json
+
+  @@map("leave_rule")
+  @@schema("subsidiary")
+}
+
+model LeaveBalance {
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  user            User      @relation(fields: [userId], references: [id])
+  leaveTypeId     String    @map("leave_type_id") @db.Uuid
+  leaveType       LeaveType @relation(fields: [leaveTypeId], references: [id])
+  accrued         Decimal   @db.Decimal(10, 2)
+  used            Decimal   @db.Decimal(10, 2)
+  // Stored field — application must keep in sync as (accrued - used)
+  balance         Decimal   @db.Decimal(10, 2)
+  accrualRate     Decimal   @map("accrual_rate") @db.Decimal(5, 2)
+  lastAccrualDate DateTime  @map("last_accrual_date") @db.Date
+  expiryDate      DateTime? @map("expiry_date") @db.Date
+
+  @@unique([userId, leaveTypeId])
+  @@map("leave_balance")
+  @@schema("subsidiary")
+}
+
+model LeaveRequest {
+  id              String             @id @default(uuid()) @db.Uuid
+  userId          String             @map("user_id") @db.Uuid
+  user            User               @relation(fields: [userId], references: [id])
+  leaveTypeId     String             @map("leave_type_id") @db.Uuid
+  leaveType       LeaveType          @relation(fields: [leaveTypeId], references: [id])
+  startDate       DateTime           @map("start_date") @db.Date
+  endDate         DateTime           @map("end_date") @db.Date
+  daysCalculated  Decimal            @map("days_calculated") @db.Decimal(5, 2)
+  includesHalfDay Boolean            @default(false) @map("includes_half_day")
+  halfDayPortion  HalfDayPortion?    @map("half_day_portion")
+  status          LeaveRequestStatus @default(draft)
+  notes           String?
+  isBackdated     Boolean            @default(false) @map("is_backdated")
+  backdatedReason String?            @map("backdated_reason")
+  createdAt       DateTime           @default(now()) @map("created_at")
+
+  approvalSteps ApprovalStep[]
+
+  @@map("leave_request")
+  @@schema("subsidiary")
+}
+
+model ApprovalStep {
+  id             String             @id @default(uuid()) @db.Uuid
+  leaveRequestId String             @map("leave_request_id") @db.Uuid
+  leaveRequest   LeaveRequest       @relation(fields: [leaveRequestId], references: [id])
+  approverId     String             @map("approver_id") @db.Uuid
+  approver       User               @relation(fields: [approverId], references: [id])
+  sequence       Int
+  status         ApprovalStepStatus @default(pending)
+  decisionNotes  String?            @map("decision_notes")
+  decidedAt      DateTime?          @map("decided_at")
+
+  @@map("approval_step")
+  @@schema("subsidiary")
+}
+
+model DeputyAssignment {
+  id                  String    @id @default(uuid()) @db.Uuid
+  userId              String    @map("user_id") @db.Uuid
+  user                User      @relation("DeputyFor", fields: [userId], references: [id])
+  deputyId            String    @map("deputy_id") @db.Uuid
+  deputy              User      @relation("DeputyIs", fields: [deputyId], references: [id])
+  validFrom           DateTime  @map("valid_from") @db.Date
+  validTo             DateTime? @map("valid_to") @db.Date
+  isPermanent         Boolean   @default(false) @map("is_permanent")
+  isTemporaryOverride Boolean   @default(false) @map("is_temporary_override")
+
+  @@map("deputy_assignment")
+  @@schema("subsidiary")
+}
+
+// Append-only. Prisma middleware must reject any update() or delete() on this model.
+model AuditEvent {
+  id          String   @id @default(uuid()) @db.Uuid
+  entityId    String   @map("entity_id") @db.Uuid
+  entityType  String   @map("entity_type")
+  eventType   String   @map("event_type")
+  actorId     String   @map("actor_id") @db.Uuid
+  actor       User     @relation(fields: [actorId], references: [id])
+  beforeState Json?    @map("before_state")
+  afterState  Json?    @map("after_state")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("audit_event")
+  @@schema("subsidiary")
+}
+
+model PublicHolidayCalendar {
+  id           String   @id @default(uuid()) @db.Uuid
+  subsidiaryId String   @map("subsidiary_id") @db.Uuid
+  name         String
+  holidayDate  DateTime @map("holiday_date") @db.Date
+  description  String?
+
+  @@map("public_holiday_calendar")
+  @@schema("subsidiary")
+}
