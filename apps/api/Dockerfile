@@ -18,15 +18,17 @@ COPY . .
 RUN pnpm --filter @joot/db generate
 RUN pnpm --filter @joot/db build
 RUN pnpm --filter @joot/api build
-# pnpm deploy produces a node_modules tree that still contains the pnpm virtual
-# store (.pnpm/). @prisma/client inside that store resolves the generated client
-# relative to its own location:
-#   .pnpm/@prisma+client@<ver>/node_modules/.prisma/client/
-# We must copy the generated .prisma dir to BOTH the root and that nested path.
+# pnpm deploy downloads fresh packages into /deploy — including a fresh
+# @prisma/client that has no generated client. prisma generate writes the
+# generated client into the BUILD stage's pnpm virtual store:
+#   /app/node_modules/.pnpm/@prisma+client@<ver>/node_modules/.prisma/client/
+# We find that path dynamically and copy it to the equivalent path inside the
+# freshly-deployed virtual store, plus the root as a fallback.
 RUN pnpm --filter @joot/api deploy --prod /deploy && \
-    cp -r node_modules/.prisma /deploy/node_modules/.prisma && \
-    find /deploy/node_modules/.pnpm -maxdepth 1 -name "@prisma+client*" -type d \
-      -exec cp -r node_modules/.prisma {}/node_modules/.prisma \;
+    PRISMA_BUILD=$(find /app/node_modules/.pnpm -maxdepth 1 -name "@prisma+client*" -type d | head -1) && \
+    PRISMA_DEPLOY=$(find /deploy/node_modules/.pnpm -maxdepth 1 -name "@prisma+client*" -type d | head -1) && \
+    cp -r "$PRISMA_BUILD/node_modules/.prisma" "$PRISMA_DEPLOY/node_modules/.prisma" && \
+    cp -r "$PRISMA_BUILD/node_modules/.prisma" /deploy/node_modules/.prisma
 
 FROM node:22-alpine AS runner
 WORKDIR /app
