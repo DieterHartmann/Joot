@@ -30,7 +30,7 @@ datasource db {
 // these ba_* models at runtime.
 
 model BaUser {
-  id            String      @id @db.Uuid
+  id            String      @id
   email         String      @unique
   name          String
   emailVerified Boolean     @default(false) @map("email_verified")
@@ -49,14 +49,14 @@ model BaUser {
 }
 
 model BaSession {
-  id        String   @id @db.Uuid
+  id        String   @id
   expiresAt DateTime @map("expires_at")
   token     String   @unique
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   ipAddress String?  @map("ip_address")
   userAgent String?  @map("user_agent")
-  userId    String   @map("user_id") @db.Uuid
+  userId    String   @map("user_id")
   user      BaUser   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("ba_session")
@@ -64,10 +64,10 @@ model BaSession {
 }
 
 model BaAccount {
-  id                    String    @id @db.Uuid
+  id                    String    @id
   accountId             String    @map("account_id")
   providerId            String    @map("provider_id")
-  userId                String    @map("user_id") @db.Uuid
+  userId                String    @map("user_id")
   user                  BaUser    @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?   @map("access_token") @db.Text
   refreshToken          String?   @map("refresh_token") @db.Text
@@ -84,7 +84,7 @@ model BaAccount {
 }
 
 model BaVerification {
-  id         String   @id @db.Uuid
+  id         String   @id
   identifier String
   value      String   @db.Text
   expiresAt  DateTime @map("expires_at")

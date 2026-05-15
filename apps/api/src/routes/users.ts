@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto'
 import type { FastifyInstance } from 'fastify'
 import { db } from '@joot/db'
 import { auth } from '../auth.js'
@@ -76,7 +77,7 @@ export default async function userRoutes(app: FastifyInstance) {
 
       const subsidiaryUser = await db.user.create({
         data: {
-          id:           authResult.user.id,
+          id:           randomUUID(),
           email:        body.email,
           fullName:     body.fullName,
           subsidiaryId: body.subsidiaryId,

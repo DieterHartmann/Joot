@@ -1,4 +1,3 @@
-import { randomUUID } from 'crypto'
 import { betterAuth } from 'better-auth'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
 import { db } from '@joot/db'
@@ -25,9 +24,6 @@ export const auth = betterAuth({
   basePath: '/api/auth',
   secret:   process.env.BETTER_AUTH_SECRET ?? 'dev-secret-CHANGE-ME-in-production',
   database: prismaAdapter(authDb, { provider: 'postgresql' }),
-  // generateId absent from BetterAuthAdvancedOptions types in 1.6.x but supported at runtime.
-  // Required so Better Auth writes RFC-4122 UUIDs into @db.Uuid columns.
-  advanced: { generateId: () => randomUUID() } as any,
   emailAndPassword: { enabled: true },
   user: {
     additionalFields: {

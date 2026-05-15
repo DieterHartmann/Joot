@@ -13,7 +13,7 @@ export default async function meRoutes(app: FastifyInstance) {
     }
 
     const subsidiaryUser = await db.user.findUnique({
-      where:   { id: user.id },
+      where:   { email: user.email },
       include: { department: true },
     })
 
