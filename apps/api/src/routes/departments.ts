@@ -7,10 +7,14 @@ export default async function departmentRoutes(app: FastifyInstance) {
     '/api/departments',
     { preHandler: [requireRole('holding_admin', 'subsidiary_admin', 'hr_director', 'ceo', 'manager')] },
     async (req, reply) => {
-      const subsidiaryId = (req.session!.user as any).subsidiaryId as string | undefined
-      const role         = (req.session!.user as any).role         as string | undefined
+      const subsidiaryId  = (req.session!.user as any).subsidiaryId as string | undefined
+      const role          = (req.session!.user as any).role         as string | undefined
+      const qSubsidiaryId = (req.query as any).subsidiaryId        as string | undefined
+      const where = role === 'holding_admin'
+        ? (qSubsidiaryId ? { subsidiaryId: qSubsidiaryId } : undefined)
+        : { subsidiaryId }
       const rows = await db.department.findMany({
-        where:   role === 'holding_admin' ? undefined : { subsidiaryId },
+        where,
         orderBy: { treePath: 'asc' },
       })
       return reply.send(rows)
@@ -35,11 +39,11 @@ export default async function departmentRoutes(app: FastifyInstance) {
     { preHandler: [requireRole('holding_admin', 'subsidiary_admin', 'hr_director')] },
     async (req, reply) => {
       const body = req.body as {
-        subsidiaryId:       string
+        subsidiaryId:        string
         parentDepartmentId?: string
-        name:               string
-        defaultApproverId:  string
-        apexApproverId?:    string
+        name:                string
+        defaultApproverId?:  string
+        apexApproverId?:     string
       }
 
       // Compute tree path from parent (or root if no parent)

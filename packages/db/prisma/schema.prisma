@@ -202,7 +202,7 @@ enum ApprovalStepStatus {
 model User {
   id            String   @id @default(uuid()) @db.Uuid
   subsidiaryId  String   @map("subsidiary_id") @db.Uuid
-  departmentId  String   @map("department_id") @db.Uuid
+  departmentId  String?  @map("department_id") @db.Uuid
   email         String   @unique
   fullName      String   @map("full_name")
   role          Role
@@ -212,7 +212,7 @@ model User {
   entraObjectId String?  @map("entra_object_id")
   createdAt     DateTime @default(now()) @map("created_at")
 
-  department Department @relation("UserDepartment", fields: [departmentId], references: [id])
+  department Department? @relation("UserDepartment", fields: [departmentId], references: [id])
 
   // Reverse relations for department approver roles
   defaultApproverFor Department[] @relation("DepartmentDefaultApprover")
@@ -238,7 +238,7 @@ model Department {
   subsidiaryId       String  @map("subsidiary_id") @db.Uuid
   parentDepartmentId String? @map("parent_department_id") @db.Uuid
   name               String
-  defaultApproverId  String  @map("default_approver_id") @db.Uuid
+  defaultApproverId  String? @map("default_approver_id") @db.Uuid
   apexApproverId     String? @map("apex_approver_id") @db.Uuid
   treeDepth          Int     @default(0) @map("tree_depth")
   // UUID-based materialised path — stable across renames, e.g. "uuid1.uuid2.uuid3"
@@ -249,7 +249,7 @@ model Department {
   parent   Department?  @relation("DepartmentTree", fields: [parentDepartmentId], references: [id])
   children Department[] @relation("DepartmentTree")
 
-  defaultApprover User  @relation("DepartmentDefaultApprover", fields: [defaultApproverId], references: [id])
+  defaultApprover User? @relation("DepartmentDefaultApprover", fields: [defaultApproverId], references: [id])
   apexApprover    User? @relation("DepartmentApexApprover", fields: [apexApproverId], references: [id])
 
   users User[] @relation("UserDepartment")

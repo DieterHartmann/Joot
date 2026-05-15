@@ -10,10 +10,14 @@ export default async function userRoutes(app: FastifyInstance) {
     '/api/users',
     { preHandler: [requireRole('holding_admin', 'subsidiary_admin', 'hr_director', 'ceo', 'manager')] },
     async (req, reply) => {
-      const subsidiaryId = (req.session!.user as any).subsidiaryId as string | undefined
-      const role         = (req.session!.user as any).role         as string | undefined
+      const subsidiaryId  = (req.session!.user as any).subsidiaryId as string | undefined
+      const role          = (req.session!.user as any).role         as string | undefined
+      const qSubsidiaryId = (req.query as any).subsidiaryId        as string | undefined
+      const where = role === 'holding_admin'
+        ? (qSubsidiaryId ? { subsidiaryId: qSubsidiaryId } : undefined)
+        : { subsidiaryId }
       const rows = await db.user.findMany({
-        where:   role === 'holding_admin' ? undefined : { subsidiaryId },
+        where,
         include: { department: true },
         orderBy: { fullName: 'asc' },
       })
@@ -50,7 +54,7 @@ export default async function userRoutes(app: FastifyInstance) {
         fullName:      string
         password:      string
         subsidiaryId:  string
-        departmentId:  string
+        departmentId?: string
         role:          string
         startDate:     string
         ctc:           number
@@ -81,7 +85,7 @@ export default async function userRoutes(app: FastifyInstance) {
           email:        body.email,
           fullName:     body.fullName,
           subsidiaryId: body.subsidiaryId,
-          departmentId: body.departmentId,
+          departmentId: body.departmentId ?? null,
           role:         body.role as any,
           startDate:    new Date(body.startDate),
           ctc:          body.ctc,
@@ -112,6 +116,13 @@ export default async function userRoutes(app: FastifyInstance) {
           ctc:          body.ctc,
         },
       })
+      // Keep BaUser.role in sync so the session reflects the new role
+      if (body.role) {
+        await (db as any).baUser.update({
+          where: { email: row.email },
+          data:  { role: body.role },
+        })
+      }
       return reply.send(row)
     },
   )

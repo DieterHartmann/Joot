@@ -1,6 +1,6 @@
-import { useNavigate } from 'react-router-dom'
-import { signOut } from '../api'
+import Layout from '../components/Layout'
 import { useAuth } from '../auth'
+import { useSubsidiary } from '../SubsidiaryContext'
 
 function roleLabel(role: string | null) {
   if (!role) return ''
@@ -8,31 +8,31 @@ function roleLabel(role: string | null) {
 }
 
 export default function Dashboard() {
-  const { user, refresh } = useAuth()
-  const navigate = useNavigate()
-
-  async function handleSignOut() {
-    await signOut()
-    await refresh()
-    navigate('/login')
-  }
+  const { user } = useAuth()
+  const { subsidiary } = useSubsidiary()
 
   return (
-    <div className="dashboard">
-      <header className="topbar">
-        <span className="brand">Joot</span>
-        <div className="topbar-right">
-          <span className="user-name">{user?.name}</span>
-          <button className="btn-ghost" onClick={handleSignOut}>Sign out</button>
-        </div>
-      </header>
+    <Layout>
+      <div className="page-header">
+        <h1>Dashboard</h1>
+      </div>
 
-      <main className="dashboard-main">
-        <div className="welcome-card">
-          <h2>Welcome back, {user?.name?.split(' ')[0]}</h2>
-          <p>{user?.email} · <span className="role-badge">{roleLabel(user?.role ?? null)}</span></p>
+      <div className="dashboard-grid">
+        <div className="info-card">
+          <h3>Signed in as</h3>
+          <p className="info-main">{user?.name}</p>
+          <p className="info-sub">{user?.email}</p>
+          <span className="role-badge">{roleLabel(user?.role ?? null)}</span>
         </div>
-      </main>
-    </div>
+
+        {subsidiary && (
+          <div className="info-card">
+            <h3>Subsidiary</h3>
+            <p className="info-main">{subsidiary.name}</p>
+            <p className="info-sub">{subsidiary.timezone}</p>
+          </div>
+        )}
+      </div>
+    </Layout>
   )
 }

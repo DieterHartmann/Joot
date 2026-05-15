@@ -4,6 +4,15 @@ import { requireRole, requireSession } from '../plugins/auth.plugin.js'
 
 export default async function subsidiaryRoutes(app: FastifyInstance) {
   app.get(
+    '/api/holding-company',
+    { preHandler: [requireSession] },
+    async (_req, reply) => {
+      const row = await db.holdingCompany.findFirst()
+      return row ? reply.send(row) : reply.code(404).send({ error: 'Not found' })
+    },
+  )
+
+  app.get(
     '/api/subsidiaries',
     { preHandler: [requireRole('holding_admin')] },
     async (_req, reply) => {
