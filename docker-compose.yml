@@ -66,6 +66,29 @@ services:
       - api
       - web
 
+  # One-shot seed runner — not started by default.
+  # Usage: docker compose --profile tools run --rm seed
+  seed:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    entrypoint: ["node", "dist/seed.js"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ADMIN_NAME: ${ADMIN_NAME:-System Admin}
+      HOLDING_COMPANY_NAME: ${HOLDING_COMPANY_NAME:-Joot Holdings}
+      SUBSIDIARY_NAME: ${SUBSIDIARY_NAME:-Main Subsidiary}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    profiles:
+      - tools
+
   # One-shot migration runner — not started by default.
   # Usage: docker compose --profile tools run --rm migrate
   migrate:
