@@ -14,28 +14,42 @@ async function seed() {
   const adminPass    = env('ADMIN_PASSWORD')
   const adminName    = env('ADMIN_NAME', 'System Admin')
 
-  // Idempotency guard — safe to re-run
-  const existing = await db.holdingCompany.findFirst()
-  if (existing) {
+  // Idempotency: holding company + admin both exist → fully seeded, skip.
+  // Holding company exists but no admin → partial seed, continue from admin step.
+  let holdingCompany = await db.holdingCompany.findFirst()
+  let subsidiary     = holdingCompany
+    ? await db.subsidiary.findFirst({ where: { holdingCompanyId: holdingCompany.id } })
+    : null
+
+  const existingAdmin = await (db as any).baUser.findFirst({ where: { role: 'holding_admin' } })
+  if (holdingCompany && existingAdmin) {
     console.log('Already seeded — skipping.')
     return
   }
 
-  const holdingCompany = await db.holdingCompany.create({
-    data: { name: holdingName, schemaName: 'public' },
-  })
-  console.log('HoldingCompany:', holdingCompany.id)
+  if (!holdingCompany) {
+    holdingCompany = await db.holdingCompany.create({
+      data: { name: holdingName, schemaName: 'public' },
+    })
+    console.log('HoldingCompany:', holdingCompany.id)
+  } else {
+    console.log('HoldingCompany already exists:', holdingCompany.id)
+  }
 
-  const subsidiary = await db.subsidiary.create({
-    data: {
-      holdingCompanyId: holdingCompany.id,
-      name:             subName,
-      pgSchema:         'subsidiary',
-      leaveYearType:    'calendar',
-      timezone:         'Africa/Johannesburg',
-    },
-  })
-  console.log('Subsidiary:', subsidiary.id)
+  if (!subsidiary) {
+    subsidiary = await db.subsidiary.create({
+      data: {
+        holdingCompanyId: holdingCompany.id,
+        name:             subName,
+        pgSchema:         'subsidiary',
+        leaveYearType:    'calendar',
+        timezone:         'Africa/Johannesburg',
+      },
+    })
+    console.log('Subsidiary:', subsidiary.id)
+  } else {
+    console.log('Subsidiary already exists:', subsidiary.id)
+  }
 
   // Better Auth handles password hashing — do not hash manually
   const result = await auth.api.signUpEmail({
