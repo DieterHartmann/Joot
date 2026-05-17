@@ -8,7 +8,6 @@ echo "Building images..."
 docker compose build api web worker
 
 echo "Restarting services..."
-docker compose up -d api web worker
-docker compose restart nginx
+docker compose up -d
 
 echo "Done."
