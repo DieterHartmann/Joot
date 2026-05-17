@@ -710,3 +710,47 @@ button[type="submit"]:disabled { opacity: 0.55; cursor: not-allowed; }
   font-size: 0.8125rem;
   align-self: flex-start;
 }
+
+/* ── Holidays page ──────────────────────────────────────────── */
+
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.year-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.25rem 0.5rem;
+}
+
+.year-label {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #374151;
+  min-width: 2.75rem;
+  text-align: center;
+}
+
+.badge-manual { background: #ede9fe; color: #5b21b6; }
+.badge-synced { background: #dbeafe; color: #1e40af; }
+
+.form-success {
+  color: #166534;
+  background: #dcfce7;
+  border: 1px solid #bbf7d0;
+  border-radius: 7px;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.btn-danger { color: #dc2626; }
+.btn-danger:hover { color: #b91c1c; }
+
+.text-muted { color: #9ca3af; }

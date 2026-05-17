@@ -49,6 +49,7 @@ export default async function subsidiaryRoutes(app: FastifyInstance) {
         leaveYearStart?:        string
         publicHolidaysExcluded?: boolean
         timezone?:              string
+        countryCode?:           string
       }
       const row = await db.subsidiary.create({
         data: {
@@ -59,6 +60,7 @@ export default async function subsidiaryRoutes(app: FastifyInstance) {
           leaveYearStart:         body.leaveYearStart ? new Date(body.leaveYearStart) : undefined,
           publicHolidaysExcluded: body.publicHolidaysExcluded ?? true,
           timezone:               body.timezone ?? 'Africa/Johannesburg',
+          countryCode:            body.countryCode ?? 'ZA',
         },
       })
       return reply.code(201).send(row)
@@ -76,6 +78,7 @@ export default async function subsidiaryRoutes(app: FastifyInstance) {
         leaveYearStart?:         string | null
         publicHolidaysExcluded?: boolean
         timezone?:               string
+        countryCode?:            string
       }
       const row = await db.subsidiary.update({
         where: { id },
@@ -85,6 +88,7 @@ export default async function subsidiaryRoutes(app: FastifyInstance) {
           leaveYearStart:         body.leaveYearStart ? new Date(body.leaveYearStart) : body.leaveYearStart === null ? null : undefined,
           publicHolidaysExcluded: body.publicHolidaysExcluded,
           timezone:               body.timezone,
+          countryCode:            body.countryCode,
         },
       })
       return reply.send(row)

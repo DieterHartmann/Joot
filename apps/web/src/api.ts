@@ -50,6 +50,7 @@ export interface Subsidiary {
   holdingCompanyId: string
   name: string
   pgSchema: string
+  countryCode: string
   leaveYearType: string
   timezone: string
   publicHolidaysExcluded: boolean
@@ -411,4 +412,48 @@ export async function adjustBalance(userId: string, data: {
     credentials: 'include',
   })
   if (!res.ok) throw new Error(await res.text())
+}
+
+// ── Public holidays ───────────────────────────────────────────────────────────
+
+export interface PublicHoliday {
+  id:          string
+  name:        string
+  holidayDate: string
+  description: string | null
+  source:      string
+  countryCode: string
+}
+
+export async function getHolidays(year: number): Promise<PublicHoliday[]> {
+  const res = await fetch(`/api/holidays?year=${year}`, { credentials: 'include' })
+  if (!res.ok) return []
+  return res.json()
+}
+
+export async function addHoliday(data: { name: string; holidayDate: string; description?: string }): Promise<PublicHoliday> {
+  const res = await fetch('/api/holidays', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+    credentials: 'include',
+  })
+  if (!res.ok) throw new Error(await res.text())
+  return res.json()
+}
+
+export async function deleteHoliday(id: string): Promise<void> {
+  const res = await fetch(`/api/holidays/${id}`, { method: 'DELETE', credentials: 'include' })
+  if (!res.ok) throw new Error(await res.text())
+}
+
+export async function syncHolidays(year: number, provider = 'nager_date'): Promise<{ added: number; updated: number; skipped: number; total: number }> {
+  const res = await fetch('/api/holidays/sync', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ year, provider }),
+    credentials: 'include',
+  })
+  if (!res.ok) throw new Error(await res.text())
+  return res.json()
 }

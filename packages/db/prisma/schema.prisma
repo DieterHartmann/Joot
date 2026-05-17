@@ -124,6 +124,7 @@ model Subsidiary {
   leaveYearStart         DateTime?      @map("leave_year_start") @db.Date
   publicHolidaysExcluded Boolean        @default(true) @map("public_holidays_excluded")
   timezone               String         @default("Africa/Johannesburg")
+  countryCode            String         @default("ZA") @map("country_code")
   createdAt              DateTime       @default(now()) @map("created_at")
 
   @@map("subsidiary")
@@ -383,7 +384,10 @@ model PublicHolidayCalendar {
   name         String
   holidayDate  DateTime @map("holiday_date") @db.Date
   description  String?
+  source       String   @default("manual")
+  countryCode  String   @default("ZA") @map("country_code")
 
+  @@unique([subsidiaryId, holidayDate])
   @@map("public_holiday_calendar")
   @@schema("subsidiary")
 }
