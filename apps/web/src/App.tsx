@@ -5,6 +5,7 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import LeaveRequests from './pages/LeaveRequests'
 import Approvals from './pages/Approvals'
+import Balances from './pages/Balances'
 import Subsidiaries from './pages/admin/Subsidiaries'
 import Departments from './pages/admin/Departments'
 import LeaveTypes from './pages/admin/LeaveTypes'
@@ -42,6 +43,7 @@ export default function App() {
             <Route path="/login" element={<RedirectIfAuthed><Login /></RedirectIfAuthed>} />
             <Route path="/" element={<RequireAuth><Dashboard /></RequireAuth>} />
             <Route path="/leave-requests" element={<RequireAuth><LeaveRequests /></RequireAuth>} />
+            <Route path="/balances" element={<RequireAuth><Balances /></RequireAuth>} />
             <Route path="/approvals" element={
               <RequireRole roles={ADMIN}><Approvals /></RequireRole>
             } />

@@ -374,3 +374,41 @@ export async function rejectStep(stepId: string, notes?: string): Promise<void> 
   })
   if (!res.ok) throw new Error(await res.text())
 }
+
+// ── Leave balances ───────────────────────────────────────────────────────────
+
+export interface LeaveBalance {
+  leaveType:       LeaveType
+  accrued:         number
+  used:            number
+  balance:         number
+  accrualRate:     number
+  lastAccrualDate: string | null
+  expiryDate:      string | null
+}
+
+export async function getMyBalances(): Promise<LeaveBalance[]> {
+  const res = await fetch('/api/leave-balances/me', { credentials: 'include' })
+  if (!res.ok) return []
+  return res.json()
+}
+
+export async function getUserBalances(userId: string): Promise<LeaveBalance[]> {
+  const res = await fetch(`/api/leave-balances/${userId}`, { credentials: 'include' })
+  if (!res.ok) return []
+  return res.json()
+}
+
+export async function adjustBalance(userId: string, data: {
+  leaveTypeId: string
+  delta: number
+  reason: string
+}): Promise<void> {
+  const res = await fetch(`/api/leave-balances/${userId}/adjust`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+    credentials: 'include',
+  })
+  if (!res.ok) throw new Error(await res.text())
+}
