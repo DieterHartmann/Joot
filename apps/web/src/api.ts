@@ -267,3 +267,110 @@ export async function updateUser(id: string, data: {
   if (!res.ok) throw new Error(await res.text())
   return res.json()
 }
+
+// ── Leave requests ───────────────────────────────────────────────────────────
+
+export interface ApprovalStep {
+  id: string
+  leaveRequestId: string
+  approverId: string
+  approver: { id: string; fullName: string }
+  sequence: number
+  status: 'pending' | 'approved' | 'rejected' | 'delegated'
+  decisionNotes: string | null
+  decidedAt: string | null
+}
+
+export interface LeaveRequest {
+  id: string
+  userId: string
+  user: { id: string; fullName: string; email: string }
+  leaveTypeId: string
+  leaveType: { id: string; name: string; category: string }
+  startDate: string
+  endDate: string
+  daysCalculated: string
+  includesHalfDay: boolean
+  halfDayPortion: 'morning' | 'afternoon' | null
+  status: 'draft' | 'pending_line_manager' | 'pending_apex' | 'approved' | 'rejected' | 'cancelled' | 'recalled'
+  notes: string | null
+  isBackdated: boolean
+  createdAt: string
+  approvalSteps: ApprovalStep[]
+}
+
+export async function getLeaveRequests(): Promise<LeaveRequest[]> {
+  const res = await fetch('/api/leave-requests', { credentials: 'include' })
+  if (!res.ok) return []
+  return res.json()
+}
+
+export async function submitLeaveRequest(data: {
+  leaveTypeId: string
+  startDate: string
+  endDate: string
+  notes?: string
+  includesHalfDay?: boolean
+  halfDayPortion?: 'morning' | 'afternoon'
+}): Promise<LeaveRequest> {
+  const res = await fetch('/api/leave-requests', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+    credentials: 'include',
+  })
+  if (!res.ok) throw new Error(await res.text())
+  return res.json()
+}
+
+export async function cancelLeaveRequest(id: string): Promise<void> {
+  const res = await fetch(`/api/leave-requests/${id}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  })
+  if (!res.ok) throw new Error(await res.text())
+}
+
+export async function recallLeaveRequest(id: string, notes?: string): Promise<void> {
+  const res = await fetch(`/api/leave-requests/${id}/recall`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ notes }),
+    credentials: 'include',
+  })
+  if (!res.ok) throw new Error(await res.text())
+}
+
+// ── Approvals ────────────────────────────────────────────────────────────────
+
+export interface PendingApprovalStep {
+  id: string
+  sequence: number
+  leaveRequest: LeaveRequest
+}
+
+export async function getPendingApprovals(): Promise<PendingApprovalStep[]> {
+  const res = await fetch('/api/approvals', { credentials: 'include' })
+  if (!res.ok) return []
+  return res.json()
+}
+
+export async function approveStep(stepId: string, notes?: string): Promise<void> {
+  const res = await fetch(`/api/approvals/${stepId}/approve`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ notes }),
+    credentials: 'include',
+  })
+  if (!res.ok) throw new Error(await res.text())
+}
+
+export async function rejectStep(stepId: string, notes?: string): Promise<void> {
+  const res = await fetch(`/api/approvals/${stepId}/reject`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ notes }),
+    credentials: 'include',
+  })
+  if (!res.ok) throw new Error(await res.text())
+}

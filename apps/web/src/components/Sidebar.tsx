@@ -40,8 +40,12 @@ export default function Sidebar() {
       )}
 
       <nav className="sidebar-nav">
-        <span className="sidebar-section">Overview</span>
+        <span className="sidebar-section">Leave</span>
         <NavLink to="/" end>Dashboard</NavLink>
+        <NavLink to="/leave-requests">My Leave</NavLink>
+        {['holding_admin', 'subsidiary_admin', 'hr_director', 'ceo', 'manager'].includes(role) && (
+          <NavLink to="/approvals">Approvals</NavLink>
+        )}
 
         {ADMIN_ROLES.includes(role) && (
           <>

@@ -3,6 +3,8 @@ import { AuthProvider, useAuth } from './auth'
 import { SubsidiaryProvider } from './SubsidiaryContext'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
+import LeaveRequests from './pages/LeaveRequests'
+import Approvals from './pages/Approvals'
 import Subsidiaries from './pages/admin/Subsidiaries'
 import Departments from './pages/admin/Departments'
 import LeaveTypes from './pages/admin/LeaveTypes'
@@ -39,6 +41,10 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<RedirectIfAuthed><Login /></RedirectIfAuthed>} />
             <Route path="/" element={<RequireAuth><Dashboard /></RequireAuth>} />
+            <Route path="/leave-requests" element={<RequireAuth><LeaveRequests /></RequireAuth>} />
+            <Route path="/approvals" element={
+              <RequireRole roles={ADMIN}><Approvals /></RequireRole>
+            } />
             <Route path="/admin/subsidiaries" element={
               <RequireRole roles={['holding_admin']}><Subsidiaries /></RequireRole>
             } />
