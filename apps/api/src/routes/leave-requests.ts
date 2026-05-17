@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto'
 import type { FastifyInstance } from 'fastify'
 import { db, resolveApexApprover, resolveDeputy } from '@joot/db'
 import { requireSession } from '../plugins/auth.plugin.js'
+import { queue } from '../queue.js'
 
 // Count Mon–Fri days between two dates (inclusive).
 function workingDays(start: Date, end: Date): number {
@@ -20,8 +21,8 @@ function workingDays(start: Date, end: Date): number {
 
 async function getSubUser(email: string) {
   return db.user.findUnique({
-    where: { email },
-    select: { id: true, subsidiaryId: true, departmentId: true, role: true },
+    where:  { email },
+    select: { id: true, fullName: true, subsidiaryId: true, departmentId: true, role: true },
   })
 }
 
@@ -37,6 +38,8 @@ async function adjustBalance(tx: any, userId: string, leaveTypeId: string, delta
     },
   })
 }
+
+const appUrl = () => process.env.APP_URL ?? process.env.BETTER_AUTH_URL ?? 'http://localhost:4000'
 
 const PRIVILEGED = ['hr_director', 'ceo', 'subsidiary_admin', 'holding_admin']
 
@@ -64,7 +67,6 @@ export default async function leaveRequestRoutes(app: FastifyInstance) {
       return reply.send(rows)
     }
 
-    // Employee / manager: own requests + requests where they are an approver
     const rows = await db.leaveRequest.findMany({
       where: {
         OR: [
@@ -111,12 +113,12 @@ export default async function leaveRequestRoutes(app: FastifyInstance) {
     if (!me) return reply.code(401).send({ error: 'Unauthorized' })
 
     const body = req.body as {
-      leaveTypeId:     string
-      startDate:       string
-      endDate:         string
-      notes?:          string
+      leaveTypeId:      string
+      startDate:        string
+      endDate:          string
+      notes?:           string
       includesHalfDay?: boolean
-      halfDayPortion?: 'morning' | 'afternoon'
+      halfDayPortion?:  'morning' | 'afternoon'
     }
 
     const leaveType = await db.leaveType.findUnique({ where: { id: body.leaveTypeId } })
@@ -133,7 +135,7 @@ export default async function leaveRequestRoutes(app: FastifyInstance) {
     // Balance check
     if (!leaveType.allowNegative) {
       const bal = await db.leaveBalance.findUnique({
-        where: { userId_leaveTypeId: { userId: me.id, leaveTypeId: leaveType.id } },
+        where:  { userId_leaveTypeId: { userId: me.id, leaveTypeId: leaveType.id } },
         select: { balance: true },
       })
       const avail = bal ? Number(bal.balance) : 0
@@ -154,12 +156,19 @@ export default async function leaveRequestRoutes(app: FastifyInstance) {
         const lineManagerId = await resolveDeputy(db as any, dept.defaultApproverId)
         steps.push({ approverId: lineManagerId, sequence: 1 })
       }
-
       if (leaveType.requiresDualApproval) {
         const apexId = await resolveApexApprover(db as any, me.departmentId, me.subsidiaryId)
         steps.push({ approverId: apexId, sequence: steps.length + 1 })
       }
     }
+
+    // Look up step-1 approver details for the notification (before transaction)
+    const step1Approver = steps.length > 0
+      ? await db.user.findUnique({
+          where:  { id: steps[0].approverId },
+          select: { email: true, fullName: true },
+        })
+      : null
 
     const requestId    = randomUUID()
     const autoApproved = steps.length === 0
@@ -208,6 +217,27 @@ export default async function leaveRequestRoutes(app: FastifyInstance) {
       return created
     })
 
+    // Enqueue notification after successful commit
+    if (step1Approver && queue) {
+      await queue.add('notify-approver', {
+        type: 'notify-approver',
+        payload: {
+          leaveRequestId: requestId,
+          stepId:         '', // not needed for notification routing
+          stepSequence:   1,
+          approverEmail:  step1Approver.email,
+          approverName:   step1Approver.fullName,
+          employeeName:   me.fullName ?? req.session!.user.name,
+          leaveTypeName:  leaveType.name,
+          startDate:      body.startDate,
+          endDate:        body.endDate,
+          days,
+          notes:          body.notes,
+          appUrl:         appUrl(),
+        },
+      })
+    }
+
     return reply.code(201).send(lr)
   })
 
@@ -234,7 +264,13 @@ export default async function leaveRequestRoutes(app: FastifyInstance) {
     const me = await getSubUser(req.session!.user.email)
     if (!me) return reply.code(401).send({ error: 'Unauthorized' })
 
-    const row = await db.leaveRequest.findUnique({ where: { id } })
+    const row = await db.leaveRequest.findUnique({
+      where:   { id },
+      include: {
+        user:      { select: { email: true, fullName: true } },
+        leaveType: { select: { name: true } },
+      },
+    })
     if (!row) return reply.code(404).send({ error: 'Not found' })
     if (row.status !== 'approved') return reply.code(400).send({ error: 'Only approved requests can be recalled' })
 
@@ -257,6 +293,24 @@ export default async function leaveRequestRoutes(app: FastifyInstance) {
         },
       })
     })
+
+    if (queue) {
+      await queue.add('notify-recall', {
+        type: 'notify-recall',
+        payload: {
+          leaveRequestId:  id,
+          employeeEmail:   row.user.email,
+          employeeName:    row.user.fullName,
+          leaveTypeName:   row.leaveType.name,
+          startDate:       row.startDate.toISOString(),
+          endDate:         row.endDate.toISOString(),
+          days,
+          recalledByName:  me.fullName ?? req.session!.user.name,
+          notes,
+          appUrl:          appUrl(),
+        },
+      })
+    }
 
     return reply.code(204).send()
   })

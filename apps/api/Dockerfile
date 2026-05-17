@@ -4,20 +4,23 @@ RUN npm install -g pnpm@9
 FROM base AS deps
 WORKDIR /app
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
-COPY packages/db/package.json ./packages/db/
+COPY packages/db/package.json    ./packages/db/
+COPY packages/queue/package.json ./packages/queue/
 COPY packages/types/package.json ./packages/types/
-COPY apps/api/package.json ./apps/api/
+COPY apps/api/package.json       ./apps/api/
 RUN pnpm install --ignore-scripts
 
 FROM base AS build
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/packages/db/node_modules ./packages/db/node_modules
-COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
+COPY --from=deps /app/node_modules                  ./node_modules
+COPY --from=deps /app/packages/db/node_modules      ./packages/db/node_modules
+COPY --from=deps /app/packages/queue/node_modules   ./packages/queue/node_modules
+COPY --from=deps /app/apps/api/node_modules         ./apps/api/node_modules
 COPY . .
-RUN pnpm --filter @joot/db generate
-RUN pnpm --filter @joot/db build
-RUN pnpm --filter @joot/api build
+RUN pnpm --filter @joot/db    generate
+RUN pnpm --filter @joot/db    build
+RUN pnpm --filter @joot/queue build
+RUN pnpm --filter @joot/api   build
 # pnpm deploy downloads fresh packages into /deploy. The resulting @prisma/client
 # package identifier differs from the build stage (no _prisma@x.x.x peer suffix
 # because the prisma CLI is not a prod dep of @joot/api). This means we must:
