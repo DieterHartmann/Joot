@@ -5,9 +5,9 @@ echo "Pulling latest code..."
 git pull
 
 echo "Building images..."
-docker compose build api web
+docker compose build api web worker
 
 echo "Restarting services..."
-docker compose up -d api web
+docker compose up -d api web worker
 
 echo "Done."
