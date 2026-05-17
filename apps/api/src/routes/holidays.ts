@@ -4,13 +4,15 @@ import { requireRole } from '../plugins/auth.plugin.js'
 import { providers } from '../providers/holidays.js'
 
 export default async function holidayRoutes(app: FastifyInstance) {
-  // List holidays for the session subsidiary, optionally filtered by year
+  // List holidays for a subsidiary, optionally filtered by year
   app.get(
     '/api/holidays',
     { preHandler: [requireRole('holding_admin', 'subsidiary_admin', 'hr_director', 'ceo', 'manager', 'employee')] },
     async (req, reply) => {
-      const subsidiaryId = (req.session!.user as any).subsidiaryId as string
-      const { year } = req.query as { year?: string }
+      const { year, subsidiaryId: qSub } = req.query as { year?: string; subsidiaryId?: string }
+      const sessionSubId = (req.session!.user as any).subsidiaryId as string | null
+      const subsidiaryId = qSub ?? sessionSubId
+      if (!subsidiaryId) return reply.code(400).send({ error: 'subsidiaryId required' })
 
       const where: any = { subsidiaryId }
       if (year) {
@@ -31,8 +33,10 @@ export default async function holidayRoutes(app: FastifyInstance) {
     '/api/holidays',
     { preHandler: [requireRole('holding_admin', 'subsidiary_admin', 'hr_director')] },
     async (req, reply) => {
-      const body = req.body as { name: string; holidayDate: string; description?: string }
-      const subsidiaryId = (req.session!.user as any).subsidiaryId as string
+      const body = req.body as { name: string; holidayDate: string; description?: string; subsidiaryId?: string }
+      const sessionSubId = (req.session!.user as any).subsidiaryId as string | null
+      const subsidiaryId = body.subsidiaryId ?? sessionSubId
+      if (!subsidiaryId) return reply.code(400).send({ error: 'subsidiaryId required' })
 
       const sub = await db.subsidiary.findUnique({ where: { id: subsidiaryId } })
       if (!sub) return reply.code(400).send({ error: 'Subsidiary not found' })
@@ -67,8 +71,10 @@ export default async function holidayRoutes(app: FastifyInstance) {
     '/api/holidays/sync',
     { preHandler: [requireRole('holding_admin', 'subsidiary_admin', 'hr_director')] },
     async (req, reply) => {
-      const body = req.body as { year: number; provider?: string }
-      const subsidiaryId = (req.session!.user as any).subsidiaryId as string
+      const body = req.body as { year: number; provider?: string; subsidiaryId?: string }
+      const sessionSubId = (req.session!.user as any).subsidiaryId as string | null
+      const subsidiaryId = body.subsidiaryId ?? sessionSubId
+      if (!subsidiaryId) return reply.code(400).send({ error: 'subsidiaryId required' })
 
       const sub = await db.subsidiary.findUnique({ where: { id: subsidiaryId } })
       if (!sub) return reply.code(400).send({ error: 'Subsidiary not found' })

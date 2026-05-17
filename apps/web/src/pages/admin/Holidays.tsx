@@ -4,36 +4,40 @@ import {
   addHoliday, deleteHoliday, getHolidays, syncHolidays,
   type PublicHoliday,
 } from '../../api'
+import { useSubsidiary } from '../../SubsidiaryContext'
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 export default function Holidays() {
-  const [year, setYear]         = useState(new Date().getFullYear())
-  const [rows, setRows]         = useState<PublicHoliday[]>([])
-  const [loading, setLoading]   = useState(true)
-  const [syncing, setSyncing]   = useState(false)
-  const [syncMsg, setSyncMsg]   = useState('')
+  const { subsidiary } = useSubsidiary()
+  const subId = subsidiary?.id
+
+  const [year, setYear]           = useState(new Date().getFullYear())
+  const [rows, setRows]           = useState<PublicHoliday[]>([])
+  const [loading, setLoading]     = useState(true)
+  const [syncing, setSyncing]     = useState(false)
+  const [syncMsg, setSyncMsg]     = useState('')
   const [showModal, setShowModal] = useState(false)
-  const [form, setForm]         = useState({ name: '', holidayDate: '', description: '' })
-  const [saving, setSaving]     = useState(false)
-  const [error, setError]       = useState('')
+  const [form, setForm]           = useState({ name: '', holidayDate: '', description: '' })
+  const [saving, setSaving]       = useState(false)
+  const [error, setError]         = useState('')
 
   async function load(y = year) {
     setLoading(true)
-    setRows(await getHolidays(y))
+    setRows(await getHolidays(y, subId))
     setLoading(false)
   }
 
-  useEffect(() => { load(year) }, [year])
+  useEffect(() => { load(year) }, [year, subId])
 
   async function handleSync() {
     setSyncing(true)
     setSyncMsg('')
     setError('')
     try {
-      const result = await syncHolidays(year)
+      const result = await syncHolidays(year, subId)
       setSyncMsg(`Sync complete — ${result.added} added, ${result.updated} updated, ${result.skipped} manual entries preserved`)
       await load(year)
     } catch (err: any) {
@@ -54,7 +58,7 @@ export default function Holidays() {
     setSaving(true)
     setError('')
     try {
-      await addHoliday({ name: form.name, holidayDate: form.holidayDate, description: form.description || undefined })
+      await addHoliday({ name: form.name, holidayDate: form.holidayDate, description: form.description || undefined, subsidiaryId: subId })
       setShowModal(false)
       setForm({ name: '', holidayDate: '', description: '' })
       await load(year)

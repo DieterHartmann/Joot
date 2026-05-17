@@ -425,13 +425,15 @@ export interface PublicHoliday {
   countryCode: string
 }
 
-export async function getHolidays(year: number): Promise<PublicHoliday[]> {
-  const res = await fetch(`/api/holidays?year=${year}`, { credentials: 'include' })
+export async function getHolidays(year: number, subsidiaryId?: string): Promise<PublicHoliday[]> {
+  const params = new URLSearchParams({ year: String(year) })
+  if (subsidiaryId) params.set('subsidiaryId', subsidiaryId)
+  const res = await fetch(`/api/holidays?${params}`, { credentials: 'include' })
   if (!res.ok) return []
   return res.json()
 }
 
-export async function addHoliday(data: { name: string; holidayDate: string; description?: string }): Promise<PublicHoliday> {
+export async function addHoliday(data: { name: string; holidayDate: string; description?: string; subsidiaryId?: string }): Promise<PublicHoliday> {
   const res = await fetch('/api/holidays', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -447,11 +449,11 @@ export async function deleteHoliday(id: string): Promise<void> {
   if (!res.ok) throw new Error(await res.text())
 }
 
-export async function syncHolidays(year: number, provider = 'nager_date'): Promise<{ added: number; updated: number; skipped: number; total: number }> {
+export async function syncHolidays(year: number, subsidiaryId?: string, provider = 'nager_date'): Promise<{ added: number; updated: number; skipped: number; total: number }> {
   const res = await fetch('/api/holidays/sync', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ year, provider }),
+    body: JSON.stringify({ year, provider, subsidiaryId }),
     credentials: 'include',
   })
   if (!res.ok) throw new Error(await res.text())
