@@ -459,3 +459,46 @@ export async function syncHolidays(year: number, subsidiaryId?: string, provider
   if (!res.ok) throw new Error(await res.text())
   return res.json()
 }
+
+// ── Deputies ──────────────────────────────────────────────────────────────────
+
+export interface DeputyAssignment {
+  id:                  string
+  userId:              string
+  deputyId:            string
+  validFrom:           string
+  validTo:             string | null
+  isPermanent:         boolean
+  isTemporaryOverride: boolean
+  user:   { id: string; fullName: string; email: string; role: string }
+  deputy: { id: string; fullName: string; email: string; role: string }
+}
+
+export async function getDeputies(): Promise<DeputyAssignment[]> {
+  const res = await fetch('/api/deputies', { credentials: 'include' })
+  if (!res.ok) return []
+  return res.json()
+}
+
+export async function createDeputy(data: {
+  userId:               string
+  deputyId:             string
+  validFrom:            string
+  validTo?:             string | null
+  isPermanent?:         boolean
+  isTemporaryOverride?: boolean
+}): Promise<DeputyAssignment> {
+  const res = await fetch('/api/deputies', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+    credentials: 'include',
+  })
+  if (!res.ok) throw new Error(await res.text())
+  return res.json()
+}
+
+export async function deleteDeputy(id: string): Promise<void> {
+  const res = await fetch(`/api/deputies/${id}`, { method: 'DELETE', credentials: 'include' })
+  if (!res.ok) throw new Error(await res.text())
+}
