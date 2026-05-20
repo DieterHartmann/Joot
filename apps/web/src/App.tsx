@@ -12,6 +12,7 @@ import LeaveTypes from './pages/admin/LeaveTypes'
 import Users from './pages/admin/Users'
 import Holidays  from './pages/admin/Holidays'
 import Deputies  from './pages/admin/Deputies'
+import AuditLog  from './pages/admin/AuditLog'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -66,6 +67,9 @@ export default function App() {
             } />
             <Route path="/admin/deputies" element={
               <RequireRole roles={['holding_admin', 'subsidiary_admin', 'hr_director', 'ceo', 'manager']}><Deputies /></RequireRole>
+            } />
+            <Route path="/admin/audit" element={
+              <RequireRole roles={['holding_admin', 'subsidiary_admin', 'hr_director', 'ceo']}><AuditLog /></RequireRole>
             } />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

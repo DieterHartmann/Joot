@@ -502,3 +502,33 @@ export async function deleteDeputy(id: string): Promise<void> {
   const res = await fetch(`/api/deputies/${id}`, { method: 'DELETE', credentials: 'include' })
   if (!res.ok) throw new Error(await res.text())
 }
+
+// ── Audit log ─────────────────────────────────────────────────────────────────
+
+export interface AuditEvent {
+  id:          string
+  entityId:    string
+  entityType:  string
+  eventType:   string
+  actorId:     string
+  actor:       { id: string; fullName: string; email: string }
+  beforeState: Record<string, unknown> | null
+  afterState:  Record<string, unknown> | null
+  createdAt:   string
+}
+
+export async function getAuditLog(params?: {
+  entityType?: string
+  entityId?:   string
+  limit?:      number
+  offset?:     number
+}): Promise<AuditEvent[]> {
+  const q = new URLSearchParams()
+  if (params?.entityType) q.set('entityType', params.entityType)
+  if (params?.entityId)   q.set('entityId',   params.entityId)
+  if (params?.limit)      q.set('limit',       String(params.limit))
+  if (params?.offset)     q.set('offset',      String(params.offset))
+  const res = await fetch(`/api/audit?${q}`, { credentials: 'include' })
+  if (!res.ok) return []
+  return res.json()
+}

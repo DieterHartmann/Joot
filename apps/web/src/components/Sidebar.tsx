@@ -66,6 +66,9 @@ export default function Sidebar() {
             {['holding_admin', 'subsidiary_admin', 'hr_director', 'ceo', 'manager'].includes(role) && (
               <NavLink to="/admin/deputies">Deputies</NavLink>
             )}
+            {['holding_admin', 'subsidiary_admin', 'hr_director', 'ceo'].includes(role) && (
+              <NavLink to="/admin/audit">Audit Log</NavLink>
+            )}
             {ADMIN_ROLES.includes(role) && (
               <NavLink to="/admin/users">Users</NavLink>
             )}
