@@ -8,14 +8,16 @@ export default async function accrualRoutes(app: FastifyInstance) {
   app.post('/api/accrual/run', { preHandler: [requireSession] }, async (req, reply) => {
     const role = (req.session!.user as any).role
     if (!PRIVILEGED.includes(role)) return reply.code(403).send({ error: 'Forbidden' })
-
     if (!queue) return reply.code(503).send({ error: 'Queue not available' })
-
-    await queue.add('run-accrual-manual', {
-      type:    'run-accrual',
-      payload: { triggeredBy: 'manual' },
-    })
-
+    await queue.add('run-accrual-manual', { type: 'run-accrual', payload: { triggeredBy: 'manual' } })
     return reply.code(202).send({ message: 'Accrual job enqueued' })
+  })
+
+  app.post('/api/accrual/warn-expiry', { preHandler: [requireSession] }, async (req, reply) => {
+    const role = (req.session!.user as any).role
+    if (!PRIVILEGED.includes(role)) return reply.code(403).send({ error: 'Forbidden' })
+    if (!queue) return reply.code(503).send({ error: 'Queue not available' })
+    await queue.add('warn-expiry-manual', { type: 'warn-expiry', payload: { triggeredBy: 'manual' } })
+    return reply.code(202).send({ message: 'Expiry warning job enqueued' })
   })
 }

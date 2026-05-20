@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto'
-import type { Job, JobData, NotifyApproverPayload, NotifyEmployeePayload, NotifyRecallPayload, RunAccrualPayload } from '@joot/queue'
+import type { Job, JobData, NotifyApproverPayload, NotifyEmployeePayload, NotifyRecallPayload, RunAccrualPayload, WarnExpiryPayload } from '@joot/queue'
 import { db } from '@joot/db'
 import { sendMail } from './mailer.js'
 
@@ -167,6 +167,81 @@ async function handleRunAccrual(p: RunAccrualPayload) {
   )
 }
 
+async function handleWarnExpiry(p: WarnExpiryPayload) {
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const fiveDaysAgo = new Date(today.getTime() - 5 * 86_400_000)
+
+  // Two warning windows: ±1.5 days centred on 30 and 7 days before expiry
+  const windows = [
+    { label: '30-day', daysMin: 28, daysMax: 31 },
+    { label: '7-day',  daysMin:  5, daysMax:  8 },
+  ]
+
+  let warnings = 0
+
+  for (const win of windows) {
+    const from = new Date(today); from.setDate(from.getDate() + win.daysMin)
+    const to   = new Date(today); to.setDate(to.getDate() + win.daysMax)
+
+    const balances = await db.leaveBalance.findMany({
+      where: { expiryDate: { gte: from, lte: to }, balance: { gt: 0 } },
+      include: {
+        user:      { select: { id: true, email: true, fullName: true } },
+        leaveType: { select: { name: true } },
+      },
+    })
+
+    for (const bal of balances) {
+      // Don't re-send within a 5-day window (tolerates cron jitter)
+      const alreadySent = await db.auditEvent.findFirst({
+        where: {
+          entityId:   bal.id,
+          entityType: 'leave_balance',
+          eventType:  'expiry_warning',
+          createdAt:  { gte: fiveDaysAgo },
+        },
+      })
+      if (alreadySent) continue
+
+      const daysLeft = Math.round(
+        (new Date(bal.expiryDate!).getTime() - today.getTime()) / 86_400_000
+      )
+      const expStr = new Date(bal.expiryDate!).toLocaleDateString('en-ZA', {
+        day: 'numeric', month: 'long', year: 'numeric',
+      })
+
+      await sendMail({
+        to:      bal.user.email,
+        subject: `Leave balance expiring in ${daysLeft} days — ${bal.leaveType.name}`,
+        text: [
+          `Hi ${bal.user.fullName},`,
+          '',
+          `Your ${bal.leaveType.name} balance of ${Number(bal.balance)} day(s) will expire on ${expStr}.`,
+          '',
+          `You have ${daysLeft} day(s) left to take this leave. Please plan accordingly.`,
+          '',
+          '— Joot Leave Management',
+        ].join('\n'),
+      })
+
+      await db.auditEvent.create({
+        data: {
+          id:         randomUUID(),
+          entityId:   bal.id,
+          entityType: 'leave_balance',
+          eventType:  'expiry_warning',
+          actorId:    bal.userId,
+          afterState: { leaveTypeId: bal.leaveTypeId, daysLeft, balance: Number(bal.balance), window: win.label, triggeredBy: p.triggeredBy },
+        },
+      })
+
+      warnings++
+    }
+  }
+
+  console.log(`[expiry-warning] done — ${warnings} warnings sent`)
+}
+
 export async function processJob(job: Job<JobData>) {
   const { type, payload } = job.data
   switch (type) {
@@ -174,6 +249,7 @@ export async function processJob(job: Job<JobData>) {
     case 'notify-employee': return handleNotifyEmployee(payload as NotifyEmployeePayload)
     case 'notify-recall':   return handleNotifyRecall(payload as NotifyRecallPayload)
     case 'run-accrual':     return handleRunAccrual(payload as RunAccrualPayload)
+    case 'warn-expiry':     return handleWarnExpiry(payload as WarnExpiryPayload)
     default: throw new Error(`Unknown job type: ${(job.data as any).type}`)
   }
 }

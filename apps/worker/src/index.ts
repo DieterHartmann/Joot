@@ -27,6 +27,17 @@ queue.add(
   console.error('[worker] failed to register accrual cron:', err.message)
 })
 
+// Register daily expiry-warning cron — 06:00 every day.
+queue.add(
+  'warn-expiry-cron',
+  { type: 'warn-expiry', payload: { triggeredBy: 'cron' } },
+  { repeat: { pattern: '0 6 * * *' } },
+).then(() => {
+  console.log('[worker] expiry-warning cron registered (0 6 * * *)')
+}).catch(err => {
+  console.error('[worker] failed to register expiry-warning cron:', err.message)
+})
+
 console.log('[worker] started — waiting for jobs on queue "joot"')
 
 // Graceful shutdown
