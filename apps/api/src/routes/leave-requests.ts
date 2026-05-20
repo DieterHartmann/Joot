@@ -4,16 +4,28 @@ import { db, resolveApexApprover, resolveDeputy } from '@joot/db'
 import { requireSession } from '../plugins/auth.plugin.js'
 import { queue } from '../queue.js'
 
-// Count Mon–Fri days between two dates (inclusive).
-function workingDays(start: Date, end: Date): number {
+// Count Mon–Fri days between two dates (inclusive), excluding public holidays.
+async function workingDays(start: Date, end: Date, subsidiaryId: string): Promise<number> {
+  const holidays = await db.publicHolidayCalendar.findMany({
+    where: {
+      subsidiaryId,
+      holidayDate: { gte: start, lte: end },
+    },
+    select: { holidayDate: true },
+  })
+  const holidaySet = new Set(
+    holidays.map(h => h.holidayDate.toISOString().slice(0, 10))
+  )
+
   let count = 0
   const cur = new Date(start)
   cur.setHours(0, 0, 0, 0)
   const fin = new Date(end)
   fin.setHours(0, 0, 0, 0)
   while (cur <= fin) {
-    const d = cur.getDay()
-    if (d !== 0 && d !== 6) count++
+    const d   = cur.getDay()
+    const iso = cur.toISOString().slice(0, 10)
+    if (d !== 0 && d !== 6 && !holidaySet.has(iso)) count++
     cur.setDate(cur.getDate() + 1)
   }
   return count
@@ -128,7 +140,7 @@ export default async function leaveRequestRoutes(app: FastifyInstance) {
     const end   = new Date(body.endDate)
     if (end < start) return reply.code(400).send({ error: 'End date must not precede start date' })
 
-    let days = workingDays(start, end)
+    let days = await workingDays(start, end, me.subsidiaryId)
     if (body.includesHalfDay) days -= 0.5
     if (days <= 0) return reply.code(400).send({ error: 'No working days in selected range' })
 
