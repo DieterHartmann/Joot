@@ -12,6 +12,7 @@ import approvalRoutes    from './routes/approvals.js'
 import deputyRoutes      from './routes/deputies.js'
 import holidayRoutes     from './routes/holidays.js'
 import auditRoutes       from './routes/audit.js'
+import accrualRoutes     from './routes/accrual.js'
 
 export async function buildApp() {
   const app = Fastify({
@@ -36,6 +37,7 @@ export async function buildApp() {
   await app.register(deputyRoutes)
   await app.register(holidayRoutes)
   await app.register(auditRoutes)
+  await app.register(accrualRoutes)
 
   return app
 }

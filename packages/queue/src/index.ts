@@ -47,10 +47,15 @@ export interface NotifyRecallPayload {
   appUrl:         string
 }
 
+export interface RunAccrualPayload {
+  triggeredBy: 'cron' | 'manual'
+}
+
 export type JobData =
   | { type: 'notify-approver'; payload: NotifyApproverPayload }
   | { type: 'notify-employee'; payload: NotifyEmployeePayload }
   | { type: 'notify-recall';   payload: NotifyRecallPayload }
+  | { type: 'run-accrual';     payload: RunAccrualPayload }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

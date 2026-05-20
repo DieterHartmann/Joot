@@ -8,6 +8,7 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
+    "@joot/db":     "workspace:*",
     "@joot/queue":  "workspace:*",
     "nodemailer":   "^6.0.0"
   },
