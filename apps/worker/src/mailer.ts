@@ -13,11 +13,13 @@ export async function sendMail(opts: {
   to:      string
   subject: string
   text:    string
+  html?:   string
 }) {
   await transport.sendMail({
     from:    process.env.SMTP_FROM ?? 'Joot Leave <noreply@joot.local>',
     to:      opts.to,
     subject: opts.subject,
     text:    opts.text,
+    html:    opts.html,
   })
 }

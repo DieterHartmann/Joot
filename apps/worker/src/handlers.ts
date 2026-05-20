@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto'
 import type { Job, JobData, NotifyApproverPayload, NotifyEmployeePayload, NotifyRecallPayload, RunAccrualPayload, WarnExpiryPayload } from '@joot/queue'
 import { db } from '@joot/db'
 import { sendMail } from './mailer.js'
+import { notifyApproverHtml, notifyEmployeeHtml, notifyRecallHtml, warnExpiryHtml } from './templates.js'
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-ZA', {
@@ -28,7 +29,7 @@ async function handleNotifyApprover(p: NotifyApproverPayload) {
     '— Joot Leave Management',
   ].filter(l => l !== null).join('\n')
 
-  await sendMail({ to: p.approverEmail, subject, text })
+  await sendMail({ to: p.approverEmail, subject, text, html: notifyApproverHtml(p) })
 }
 
 async function handleNotifyEmployee(p: NotifyEmployeePayload) {
@@ -51,7 +52,7 @@ async function handleNotifyEmployee(p: NotifyEmployeePayload) {
     '— Joot Leave Management',
   ].filter(l => l !== null).join('\n')
 
-  await sendMail({ to: p.employeeEmail, subject, text })
+  await sendMail({ to: p.employeeEmail, subject, text, html: notifyEmployeeHtml(p) })
 }
 
 async function handleNotifyRecall(p: NotifyRecallPayload) {
@@ -73,7 +74,7 @@ async function handleNotifyRecall(p: NotifyRecallPayload) {
     '— Joot Leave Management',
   ].filter(l => l !== null).join('\n')
 
-  await sendMail({ to: p.employeeEmail, subject, text })
+  await sendMail({ to: p.employeeEmail, subject, text, html: notifyRecallHtml(p) })
 }
 
 async function handleRunAccrual(p: RunAccrualPayload) {
@@ -210,6 +211,7 @@ async function handleWarnExpiry(p: WarnExpiryPayload) {
         day: 'numeric', month: 'long', year: 'numeric',
       })
 
+      const appUrl = process.env.APP_URL ?? process.env.BETTER_AUTH_URL ?? 'http://localhost:4000'
       await sendMail({
         to:      bal.user.email,
         subject: `Leave balance expiring in ${daysLeft} days — ${bal.leaveType.name}`,
@@ -222,6 +224,14 @@ async function handleWarnExpiry(p: WarnExpiryPayload) {
           '',
           '— Joot Leave Management',
         ].join('\n'),
+        html: warnExpiryHtml({
+          employeeName:  bal.user.fullName,
+          leaveTypeName: bal.leaveType.name,
+          balance:       Number(bal.balance),
+          daysLeft,
+          expiryDate:    expStr,
+          appUrl,
+        }),
       })
 
       await db.auditEvent.create({
