@@ -503,6 +503,18 @@ export async function deleteDeputy(id: string): Promise<void> {
   if (!res.ok) throw new Error(await res.text())
 }
 
+// ── Background jobs ───────────────────────────────────────────────────────────
+
+export async function triggerAccrual(): Promise<void> {
+  const res = await fetch('/api/accrual/run', { method: 'POST', credentials: 'include' })
+  if (!res.ok) throw new Error(await res.text())
+}
+
+export async function triggerExpiryWarnings(): Promise<void> {
+  const res = await fetch('/api/accrual/warn-expiry', { method: 'POST', credentials: 'include' })
+  if (!res.ok) throw new Error(await res.text())
+}
+
 // ── Audit log ─────────────────────────────────────────────────────────────────
 
 export interface AuditEvent {
