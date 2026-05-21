@@ -503,6 +503,55 @@ export async function deleteDeputy(id: string): Promise<void> {
   if (!res.ok) throw new Error(await res.text())
 }
 
+// ── Reports ───────────────────────────────────────────────────────────────────
+
+export interface LiabilityRow {
+  userId:        string
+  fullName:      string
+  email:         string
+  ctc:           number
+  dailyRate:     number
+  leaveTypeId:   string
+  leaveTypeName: string
+  bceaProtected: boolean
+  days:          number
+  monetary:      number
+}
+
+export interface LiabilityReport {
+  rows:    LiabilityRow[]
+  summary: { totalDays: number; totalMonetary: number; excludeBcea: boolean; workingDaysPerYear: number }
+}
+
+export async function getLiabilityReport(subsidiaryId?: string, excludeBcea = false): Promise<LiabilityReport> {
+  const q = new URLSearchParams({ excludeBcea: String(excludeBcea) })
+  if (subsidiaryId) q.set('subsidiaryId', subsidiaryId)
+  const res = await fetch(`/api/reports/liability?${q}`, { credentials: 'include' })
+  if (!res.ok) throw new Error(await res.text())
+  return res.json()
+}
+
+export interface LeaveTransaction {
+  employeeId:     string
+  fullName:       string
+  email:          string
+  leaveTypeId:    string
+  leaveTypeName:  string
+  category:       string
+  startDate:      string
+  endDate:        string
+  days:           number
+  leaveRequestId: string
+}
+
+export async function getLeaveTransactions(month: string, subsidiaryId?: string): Promise<{ month: string; rows: LeaveTransaction[]; total: number }> {
+  const q = new URLSearchParams({ month })
+  if (subsidiaryId) q.set('subsidiaryId', subsidiaryId)
+  const res = await fetch(`/api/reports/leave-transactions?${q}`, { credentials: 'include' })
+  if (!res.ok) throw new Error(await res.text())
+  return res.json()
+}
+
 // ── Background jobs ───────────────────────────────────────────────────────────
 
 export async function triggerAccrual(): Promise<void> {

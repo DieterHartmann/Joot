@@ -931,3 +931,27 @@ button[type="submit"]:disabled { opacity: 0.55; cursor: not-allowed; }
 }
 .commission-success ul { margin: 8px 0 0; padding-left: 18px; }
 .commission-success li { margin: 4px 0; }
+
+/* ── Reports ────────────────────────────────────────────────────────────────── */
+.report-tabs    { display: flex; gap: 0; border-bottom: 2px solid #e5e7eb; margin-bottom: 20px; }
+.report-tab     { background: none; border: none; padding: 10px 20px; font-size: 0.875rem; font-weight: 500; color: #6b7280; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+.report-tab.active { color: #4f46e5; border-bottom-color: #4f46e5; }
+.report-tab:hover:not(.active) { color: #374151; }
+
+.report-toolbar { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; font-size: 0.875rem; }
+
+.liability-summary {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.liability-stat {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 14px 20px;
+  min-width: 180px;
+}
+.liability-stat-label { display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; margin-bottom: 4px; }
+.liability-stat-value { display: block; font-size: 1.25rem; font-weight: 700; color: #111827; }
