@@ -1,4 +1,5 @@
 import Fastify from 'fastify'
+import multipart from '@fastify/multipart'
 import authPlugin from './plugins/auth.plugin.js'
 import healthRoutes      from './routes/health.js'
 import meRoutes          from './routes/me.js'
@@ -12,7 +13,8 @@ import approvalRoutes    from './routes/approvals.js'
 import deputyRoutes      from './routes/deputies.js'
 import holidayRoutes     from './routes/holidays.js'
 import auditRoutes       from './routes/audit.js'
-import accrualRoutes     from './routes/accrual.js'
+import accrualRoutes      from './routes/accrual.js'
+import commissioningRoutes from './routes/commissioning.js'
 
 export async function buildApp() {
   const app = Fastify({
@@ -20,6 +22,8 @@ export async function buildApp() {
       level: process.env.LOG_LEVEL ?? 'info',
     },
   })
+
+  await app.register(multipart, { limits: { fileSize: 10 * 1024 * 1024 } }) // 10 MB max
 
   // Auth plugin must be registered first — it installs the session decorator
   // and the global preHandler hook that resolves the session on every request.
@@ -38,6 +42,7 @@ export async function buildApp() {
   await app.register(holidayRoutes)
   await app.register(auditRoutes)
   await app.register(accrualRoutes)
+  await app.register(commissioningRoutes)
 
   return app
 }

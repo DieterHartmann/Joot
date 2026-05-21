@@ -72,6 +72,9 @@ export default function Sidebar() {
             {['holding_admin', 'subsidiary_admin'].includes(role) && (
               <NavLink to="/admin/jobs">Background Jobs</NavLink>
             )}
+            {['holding_admin', 'subsidiary_admin'].includes(role) && (
+              <NavLink to="/admin/commissioning">Commissioning</NavLink>
+            )}
             {ADMIN_ROLES.includes(role) && (
               <NavLink to="/admin/users">Users</NavLink>
             )}

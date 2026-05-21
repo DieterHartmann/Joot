@@ -818,3 +818,59 @@ button[type="submit"]:disabled { opacity: 0.55; cursor: not-allowed; }
 .job-title { margin: 0 0 4px; font-size: 1rem; font-weight: 600; }
 .job-desc  { margin: 0; font-size: 0.875rem; color: #6b7280; line-height: 1.5; }
 .job-card-action { flex-shrink: 0; }
+
+/* ── Commissioning ──────────────────────────────────────────────────────────── */
+.commission-step {
+  display: flex;
+  gap: 20px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 16px;
+}
+.commission-step-number {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  background: #4f46e5;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.commission-step-body { flex: 1; }
+.commission-step-body h3 { margin: 0 0 6px; font-size: 1rem; }
+.commission-step-body p  { margin: 0 0 16px; font-size: 0.875rem; color: #6b7280; line-height: 1.5; }
+
+.upload-form { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.file-label  { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.file-btn    { cursor: pointer; }
+.file-name   { font-size: 0.875rem; color: #6b7280; }
+
+.commission-errors {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #991b1b;
+}
+.commission-errors ul { margin: 8px 0 0; padding-left: 18px; }
+.commission-errors li { margin: 4px 0; }
+
+.commission-success {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #166534;
+}
+.commission-success ul { margin: 8px 0 0; padding-left: 18px; }
+.commission-success li { margin: 4px 0; }
