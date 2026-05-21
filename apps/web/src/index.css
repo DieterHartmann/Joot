@@ -546,6 +546,63 @@ button[type="submit"]:disabled { opacity: 0.55; cursor: not-allowed; }
 
 /* ── Dashboard cards ───────────────────────────────────────── */
 
+/* ── Dashboard (real data) ──────────────────────────────────────────────────── */
+.dash-section       { margin-bottom: 24px; }
+.dash-section-title { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; margin: 0 0 10px; }
+
+.dash-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 800px) { .dash-cols { grid-template-columns: 1fr; } }
+
+.dash-balance-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 28px; }
+.dash-balance-card {
+  flex: 1 1 150px;
+  min-width: 140px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+.dash-balance-type  { font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
+.dash-balance-days  { font-size: 2rem; font-weight: 700; line-height: 1; display: flex; align-items: baseline; gap: 4px; }
+.dash-balance-unit  { font-size: 0.875rem; font-weight: 500; color: #9ca3af; }
+.dash-balance-meta  { font-size: 0.75rem; color: #9ca3af; margin-top: 6px; }
+.dash-balance-expiry { font-size: 0.7rem; color: #d97706; margin-top: 4px; }
+
+.dash-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  font-size: 0.875rem;
+  color: #1e40af;
+}
+
+.dash-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.dash-list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  gap: 12px;
+}
+.dash-list-row:last-child { border-bottom: none; }
+.dash-list-primary { font-size: 0.875rem; font-weight: 500; color: #111827; }
+.dash-list-sub     { font-size: 0.8rem; color: #9ca3af; margin-top: 2px; }
+.dash-empty        { font-size: 0.875rem; color: #9ca3af; margin: 0; }
+.dash-empty a      { color: #4f46e5; text-decoration: none; }
+
+/* ── (old placeholder grid — kept for any other usage) ─────────────────────── */
 .dashboard-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
