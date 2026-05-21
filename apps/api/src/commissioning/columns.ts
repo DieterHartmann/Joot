@@ -49,6 +49,16 @@ export const SHEETS: SheetDef[] = [
         note:    'Name of the parent department (must appear in this sheet). Leave blank for top-level.',
         example: '',
       },
+      {
+        key: 'default_approver_email', header: 'Line Manager Email', type: 'string', required: false, width: 34,
+        note:    'Email of the default line-manager approver for this department. Must match an email in the Employees sheet.',
+        example: 'jane.smith@company.com',
+      },
+      {
+        key: 'apex_approver_email', header: 'Apex Approver Email', type: 'string', required: false, width: 34,
+        note:    'Email of the apex (second-level) approver. Required only if any leave type uses dual approval.',
+        example: '',
+      },
     ],
   },
   {

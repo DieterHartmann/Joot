@@ -62,7 +62,7 @@ function parseCell(cell: ExcelJS.Cell, col: ColDef, sheetName: string, rowNum: n
 
 // ── Typed parsed shapes ────────────────────────────────────────────────────────
 
-export interface ParsedDept    { name: string; parentName: string | null }
+export interface ParsedDept    { name: string; parentName: string | null; defaultApproverEmail: string | null; apexApproverEmail: string | null }
 export interface ParsedLT      { name: string; category: string; maxDaysPerYear: number | null; allowNegative: boolean; expiryMonths: number | null; requiresDualApproval: boolean; bceaProtected: boolean }
 export interface ParsedEmployee { fullName: string; email: string; password: string; role: string; departmentName: string | null; startDate: string; ctc: number }
 export interface ParsedBalance  { employeeEmail: string; leaveTypeName: string; openingBalance: number }
@@ -112,8 +112,10 @@ export async function parseUpload(buffer: Buffer): Promise<ParsedData> {
         switch (sheetDef.name) {
           case 'Departments':
             result.departments.push({
-              name:       parsed.name as string,
-              parentName: (parsed.parent_name as string | null) || null,
+              name:                 parsed.name as string,
+              parentName:           (parsed.parent_name as string | null) || null,
+              defaultApproverEmail: (parsed.default_approver_email as string | null) || null,
+              apexApproverEmail:    (parsed.apex_approver_email as string | null) || null,
             })
             break
 
@@ -172,6 +174,16 @@ export async function parseUpload(buffer: Buffer): Promise<ParsedData> {
     for (const emp of result.employees) {
       if (emp.departmentName && !deptNames.has(emp.departmentName)) {
         result.errors.push(`Employee "${emp.email}": department "${emp.departmentName}" not in Departments sheet`)
+      }
+    }
+
+    // Department approver email references
+    for (const dept of result.departments) {
+      if (dept.defaultApproverEmail && !empEmails.has(dept.defaultApproverEmail)) {
+        result.errors.push(`Department "${dept.name}": line manager email "${dept.defaultApproverEmail}" not in Employees sheet`)
+      }
+      if (dept.apexApproverEmail && !empEmails.has(dept.apexApproverEmail)) {
+        result.errors.push(`Department "${dept.name}": apex approver email "${dept.apexApproverEmail}" not in Employees sheet`)
       }
     }
 

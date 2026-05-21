@@ -105,6 +105,8 @@ export async function seedCommissioning(
         await syncTreePath(tx as any, id)
       }
 
+      // Approver IDs are resolved after employees exist — populated below
+
       // Leave types
       const ltIdMap: Record<string, string> = {}
 
@@ -147,6 +149,19 @@ export async function seedCommissioning(
             ctc:          emp.ctc,
           },
         })
+      }
+
+      // Wire department approvers now that empIdMap is populated
+      for (const dept of data.departments) {
+        const id = deptIdMap[dept.name]
+        const defaultApproverId = dept.defaultApproverEmail ? empIdMap[dept.defaultApproverEmail] : undefined
+        const apexApproverId    = dept.apexApproverEmail    ? empIdMap[dept.apexApproverEmail]    : undefined
+        if (defaultApproverId || apexApproverId) {
+          await tx.department.update({
+            where: { id },
+            data:  { defaultApproverId, apexApproverId },
+          })
+        }
       }
 
       // Opening balances
