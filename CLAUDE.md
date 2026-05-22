@@ -16,6 +16,8 @@ apps/worker      — BullMQ worker + email sender
 
 Package manager: **pnpm@9** (pinned — do NOT use corepack or pnpm v10+, breaks Docker builds).
 
+**Fastify version lock: `^4.x`**. All `@fastify/*` plugins must be pinned to versions compatible with Fastify 4.x. `@fastify/multipart` must stay at `^7.x` — v8+ requires Fastify 5.x and will crash at startup.
+
 ## Deploying to the Pi
 
 **Always use the deploy script. Never suggest manual docker commands.**
