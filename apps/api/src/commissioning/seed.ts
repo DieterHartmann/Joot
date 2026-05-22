@@ -41,14 +41,29 @@ export async function seedCommissioning(
 ): Promise<SeedResult> {
   // ── Pre-flight: check for conflicts in the DB ─────────────────────────────
   const emailList = data.employees.map(e => e.email)
-  const existingEmails = await (db as any).baUser.findMany({
+  const existingBaUsers = await (db as any).baUser.findMany({
     where:  { email: { in: emailList } },
-    select: { email: true },
+    select: { email: true, id: true },
   })
-  if (existingEmails.length) {
-    throw new Error(
-      `These emails already exist: ${existingEmails.map((u: any) => u.email).join(', ')}`
-    )
+
+  if (existingBaUsers.length) {
+    // Distinguish real conflicts (BaUser + subsidiary User exists) from orphans
+    // left by a previous failed commissioning attempt (BaUser only, no subsidiary User).
+    const existingSubUsers = await db.user.findMany({
+      where:  { email: { in: existingBaUsers.map((u: any) => u.email) }, subsidiaryId },
+      select: { email: true },
+    })
+
+    if (existingSubUsers.length) {
+      throw new Error(
+        `These emails already exist in this subsidiary: ${existingSubUsers.map(u => u.email).join(', ')}`
+      )
+    }
+
+    // Orphaned BaUser records from a previous failed upload — clean them up and proceed.
+    const orphanIds = existingBaUsers.map((u: any) => u.id)
+    const deleted = await (db as any).baUser.deleteMany({ where: { id: { in: orphanIds } } })
+    console.info(`[commissioning] auto-cleaned ${deleted.count} orphaned BaUser record(s) before retry`)
   }
 
   // ── Step 1: Create Better Auth users (outside Prisma transaction) ─────────
@@ -70,9 +85,11 @@ export async function seedCommissioning(
       })
     }
   } catch (err) {
-    // Clean up any auth users created so far
     if (authUserIds.length) {
-      await (db as any).baUser.deleteMany({ where: { id: { in: authUserIds } } }).catch(() => {})
+      await (db as any).baUser.deleteMany({ where: { id: { in: authUserIds } } })
+        .catch((cleanupErr: Error) =>
+          console.error(`[commissioning] BaUser cleanup failed after Step 1 error: ${cleanupErr.message}`)
+        )
     }
     throw err
   }
@@ -190,9 +207,11 @@ export async function seedCommissioning(
 
     return counts
   } catch (err) {
-    // Transaction rolled back — clean up the auth users we already created
     if (authUserIds.length) {
-      await (db as any).baUser.deleteMany({ where: { id: { in: authUserIds } } }).catch(() => {})
+      await (db as any).baUser.deleteMany({ where: { id: { in: authUserIds } } })
+        .catch((cleanupErr: Error) =>
+          console.error(`[commissioning] BaUser cleanup failed after transaction rollback: ${cleanupErr.message}`)
+        )
     }
     throw err
   }
