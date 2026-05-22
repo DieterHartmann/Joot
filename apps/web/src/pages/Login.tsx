@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { signIn } from '../api'
 import { useAuth } from '../auth'
 
@@ -9,6 +9,7 @@ export default function Login() {
   const [error, setError]       = useState('')
   const [busy, setBusy]         = useState(false)
   const navigate = useNavigate()
+  const location = useLocation()
   const { refresh } = useAuth()
 
   async function handleSubmit(e: React.FormEvent) {
@@ -18,7 +19,7 @@ export default function Login() {
     try {
       await signIn(email, password)
       await refresh()
-      navigate('/')
+      navigate((location.state as any)?.from ?? '/', { replace: true })
     } catch {
       setError('Invalid email or password')
     } finally {

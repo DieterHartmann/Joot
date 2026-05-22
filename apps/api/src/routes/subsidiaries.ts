@@ -26,7 +26,7 @@ export default async function subsidiaryRoutes(app: FastifyInstance) {
 
   app.get(
     '/api/subsidiaries/:id',
-    { preHandler: [requireRole('holding_admin', 'subsidiary_admin', 'hr_director', 'ceo')] },
+    { preHandler: [requireSession] },
     async (req, reply) => {
       const { id } = req.params as { id: string }
       const row = await db.subsidiary.findUnique({

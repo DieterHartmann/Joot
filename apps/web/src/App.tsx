@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './auth'
 import { SubsidiaryProvider } from './SubsidiaryContext'
 import Login from './pages/Login'
@@ -19,8 +19,9 @@ import Reports       from './pages/admin/Reports'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
+  const location = useLocation()
   if (loading) return <div className="loading">Loading…</div>
-  if (!user) return <Navigate to="/login" replace />
+  if (!user) return <Navigate to="/login" state={{ from: location.pathname }} replace />
   return <>{children}</>
 }
 

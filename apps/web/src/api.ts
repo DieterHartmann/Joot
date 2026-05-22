@@ -63,6 +63,12 @@ export async function getSubsidiaries(): Promise<Subsidiary[]> {
   return res.json()
 }
 
+export async function getSubsidiary(id: string): Promise<Subsidiary | null> {
+  const res = await fetch(`/api/subsidiaries/${id}`, { credentials: 'include' })
+  if (!res.ok) return null
+  return res.json()
+}
+
 export async function createSubsidiary(data: {
   holdingCompanyId: string
   name: string
