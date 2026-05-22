@@ -16,6 +16,7 @@ COPY --from=deps /app/packages/queue/node_modules ./packages/queue/node_modules
 COPY --from=deps /app/packages/db/node_modules    ./packages/db/node_modules
 COPY --from=deps /app/apps/worker/node_modules    ./apps/worker/node_modules
 COPY . .
+RUN pnpm --filter @joot/db     generate
 RUN pnpm --filter @joot/db     build
 RUN pnpm --filter @joot/queue  build
 RUN pnpm --filter @joot/worker build
