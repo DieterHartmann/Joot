@@ -5,15 +5,18 @@ FROM base AS deps
 WORKDIR /app
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
 COPY packages/queue/package.json ./packages/queue/
+COPY packages/db/package.json    ./packages/db/
 COPY apps/worker/package.json    ./apps/worker/
 RUN pnpm install --ignore-scripts
 
 FROM base AS build
 WORKDIR /app
-COPY --from=deps /app/node_modules           ./node_modules
+COPY --from=deps /app/node_modules                ./node_modules
 COPY --from=deps /app/packages/queue/node_modules ./packages/queue/node_modules
+COPY --from=deps /app/packages/db/node_modules    ./packages/db/node_modules
 COPY --from=deps /app/apps/worker/node_modules    ./apps/worker/node_modules
 COPY . .
+RUN pnpm --filter @joot/db     build
 RUN pnpm --filter @joot/queue  build
 RUN pnpm --filter @joot/worker build
 RUN pnpm --filter @joot/worker deploy --prod /deploy
