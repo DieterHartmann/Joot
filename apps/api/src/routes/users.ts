@@ -111,7 +111,7 @@ export default async function userRoutes(app: FastifyInstance) {
         where: { id },
         data: {
           fullName:     body.fullName,
-          departmentId: body.departmentId,
+          departmentId: 'departmentId' in body ? (body.departmentId || null) : undefined,
           role:         body.role as any,
           ctc:          body.ctc,
         },
