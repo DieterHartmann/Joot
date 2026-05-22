@@ -208,7 +208,7 @@ model User {
   fullName      String   @map("full_name")
   role          Role
   startDate     DateTime @map("start_date") @db.Date
-  ctc           Decimal  @db.Decimal(15, 2)
+  ctc           Decimal? @db.Decimal(15, 2)
   msEntraLinked Boolean  @default(false) @map("ms_entra_linked")
   entraObjectId String?  @map("entra_object_id")
   createdAt     DateTime @default(now()) @map("created_at")

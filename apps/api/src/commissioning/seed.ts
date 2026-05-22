@@ -61,7 +61,11 @@ export async function seedCommissioning(
     }
 
     // Orphaned BaUser records from a previous failed upload — clean them up and proceed.
-    const orphanIds = existingBaUsers.map((u: any) => u.id)
+    const orphanEmails = existingBaUsers.map((u: any) => u.email)
+    const orphanIds    = existingBaUsers.map((u: any) => u.id)
+    // ba_verification has no FK cascade from ba_user; delete it first so Better Auth
+    // doesn't treat the email as still-registered on the next signUpEmail call.
+    await (db as any).baVerification.deleteMany({ where: { identifier: { in: orphanEmails } } })
     const deleted = await (db as any).baUser.deleteMany({ where: { id: { in: orphanIds } } })
     console.info(`[commissioning] auto-cleaned ${deleted.count} orphaned BaUser record(s) before retry`)
   }

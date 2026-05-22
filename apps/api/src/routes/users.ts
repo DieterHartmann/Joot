@@ -57,7 +57,7 @@ export default async function userRoutes(app: FastifyInstance) {
         departmentId?: string
         role:          string
         startDate:     string
-        ctc:           number
+        ctc?:          number
       }
 
       // Create the auth user via Better Auth's server-side signup.

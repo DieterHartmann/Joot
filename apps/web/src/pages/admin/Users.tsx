@@ -46,7 +46,7 @@ export default function Users() {
 
   function openEdit(u: SubsidiaryUser) {
     setEditing(u)
-    setEditForm({ fullName: u.fullName, role: u.role, departmentId: u.departmentId ?? '', ctc: u.ctc })
+    setEditForm({ fullName: u.fullName, role: u.role, departmentId: u.departmentId ?? '', ctc: u.ctc ?? '' })
     setError('')
     setModal('edit')
   }
@@ -68,7 +68,7 @@ export default function Users() {
         departmentId: createForm.departmentId || undefined,
         role:         createForm.role,
         startDate:    createForm.startDate,
-        ctc:          Number(createForm.ctc),
+        ctc:          createForm.ctc ? Number(createForm.ctc) : undefined,
       })
       await load()
       setModal('none')
@@ -89,7 +89,7 @@ export default function Users() {
         fullName:     editForm.fullName,
         departmentId: editForm.departmentId || null,
         role:         editForm.role,
-        ctc:          Number(editForm.ctc),
+        ctc:          editForm.ctc ? Number(editForm.ctc) : undefined,
       })
       await load()
       setModal('none')
@@ -156,7 +156,7 @@ export default function Users() {
                   </select>
                 </label>
                 <label>Start date<input type="date" value={createForm.startDate} onChange={e => setC('startDate', e.target.value)} required /></label>
-                <label>CTC (annual)<input type="number" min="0" step="0.01" value={createForm.ctc} onChange={e => setC('ctc', e.target.value)} required /></label>
+                <label>CTC (annual)<input type="number" min="0" step="0.01" value={createForm.ctc} onChange={e => setC('ctc', e.target.value)} /></label>
               </div>
               {error && <p className="form-error">{error}</p>}
               <div className="modal-actions">
