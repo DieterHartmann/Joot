@@ -70,6 +70,8 @@ export default function Commissioning() {
         The template is generated fresh each time, so it always reflects the current schema.
       </p>
 
+      {!subId && <div className="page-notice">Select a subsidiary from the top bar before commissioning.</div>}
+
       {/* Step 1 — Download */}
       <div className="commission-step">
         <div className="commission-step-number">1</div>
@@ -79,7 +81,7 @@ export default function Commissioning() {
             Download the XLSX template for <strong>{subsidiary?.name ?? 'this company'}</strong>.
             Fill in each sheet in order: Departments → Leave Types → Employees → Opening Balances.
           </p>
-          <button className="btn-primary" onClick={downloadTemplate}>
+          <button className="btn-primary" onClick={downloadTemplate} disabled={!subId}>
             Download template
           </button>
         </div>
@@ -106,7 +108,7 @@ export default function Commissioning() {
               <span className="file-btn btn-ghost">Choose file</span>
               <span className="file-name">{fileName || 'No file chosen'}</span>
             </label>
-            <button type="submit" className="btn-primary" disabled={!fileName || uploading}>
+            <button type="submit" className="btn-primary" disabled={!fileName || uploading || !subId}>
               {uploading ? 'Uploading…' : 'Upload & seed'}
             </button>
           </form>
