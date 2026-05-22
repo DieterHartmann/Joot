@@ -18,9 +18,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   const refresh = async () => {
-    const data = await getMe()
-    setUser(data?.authUser ?? null)
-    setLoading(false)
+    try {
+      const data = await getMe()
+      setUser(data?.authUser ?? null)
+    } catch {
+      setUser(null)
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => { refresh() }, [])
