@@ -51,7 +51,7 @@ export default async function commissioningRoutes(app: FastifyInstance) {
       }
 
       // Determine which subsidiary to seed into
-      const subId = (req.body as any)?.subsidiaryId ?? sessionSubId
+      const subId = (req.query as any).subsidiaryId ?? sessionSubId
       if (!subId) return reply.code(400).send({ error: 'subsidiaryId required' })
 
       // Seed

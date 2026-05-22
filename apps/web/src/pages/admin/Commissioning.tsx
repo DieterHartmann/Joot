@@ -36,9 +36,9 @@ export default function Commissioning() {
     try {
       const form = new FormData()
       form.append('file', file)
-      if (subId) form.append('subsidiaryId', subId)
 
-      const res = await fetch('/api/commissioning/upload', {
+      const qs = subId ? `?subsidiaryId=${subId}` : ''
+      const res = await fetch(`/api/commissioning/upload${qs}`, {
         method:      'POST',
         body:        form,
         credentials: 'include',
