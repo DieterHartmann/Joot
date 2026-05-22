@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Layout from '../components/Layout'
+import OrgChart from '../components/OrgChart'
 import { useAuth } from '../auth'
 import { getMyBalances, getLeaveRequests, getPendingApprovals, type LeaveBalance, type LeaveRequest, type PendingApprovalStep } from '../api'
 
@@ -186,6 +187,11 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+      {/* ── Org chart ────────────────────────────────────────────────────── */}
+      <section className="dash-section">
+        <h2 className="dash-section-title">Organisation Structure</h2>
+        <OrgChart />
+      </section>
     </Layout>
   )
 }

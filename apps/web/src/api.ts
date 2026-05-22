@@ -564,6 +564,35 @@ export async function triggerExpiryWarnings(): Promise<void> {
   if (!res.ok) throw new Error(await res.text())
 }
 
+// ── Org chart ─────────────────────────────────────────────────────────────────
+
+export interface OrgChartDept {
+  id:                  string
+  name:                string
+  parentId:            string | null
+  defaultApproverName: string | null
+  apexApproverName:    string | null
+  employeeCount:       number
+  treeDepth:           number
+}
+
+export interface OrgChartSubsidiary {
+  id:            string
+  name:          string
+  deptCount:     number
+  employeeCount: number
+}
+
+export type OrgChartData =
+  | { type: 'subsidiary'; subsidiaryName: string; userDeptId: string | null; departments: OrgChartDept[] }
+  | { type: 'holding';    holdingName: string;    userDeptId: null;          subsidiaries: OrgChartSubsidiary[] }
+
+export async function getOrgChart(): Promise<OrgChartData | null> {
+  const res = await fetch('/api/org-chart', { credentials: 'include' })
+  if (!res.ok) return null
+  return res.json()
+}
+
 // ── Audit log ─────────────────────────────────────────────────────────────────
 
 export interface AuditEvent {
